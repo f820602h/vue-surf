@@ -1,26 +1,46 @@
 <script setup lang="ts">
-import { StyleValue, ref, computed } from "vue";
-import type { Length, WaveParameters } from "../types";
+import {
+  StyleValue,
+  ref,
+  computed,
+  watch,
+  onBeforeMount,
+  onBeforeUnmount,
+} from "vue";
+import type {
+  Length,
+  PoleParameters,
+  WaveAnimationParametersObject,
+} from "../types";
 import {
   getLengthPixelNumber,
   getLengthPercentNumber,
   average,
 } from "../utils";
+import { useMarquee } from "../composables/marquee";
 import { useElementSize } from "@vueuse/core";
 
 const props = withDefaults(
   defineProps<{
     width: Length;
-    poles: WaveParameters[];
+    poles: PoleParameters[];
+    animate?: WaveAnimationParametersObject;
     color?: string;
     repeat?: boolean;
     closure?: boolean;
     smooth?: boolean | number;
   }>(),
-  { color: "lightblue", repeat: true, closure: true, smooth: true },
+  {
+    color: "lightblue",
+    repeat: true,
+    closure: true,
+    smooth: true,
+    animate: undefined,
+  },
 );
 
 const waveEl = ref<HTMLElement | null>(null);
+const repeatWrapper = ref<HTMLElement | null>(null);
 const { width: waveElWidth, height: waveElHeight } = useElementSize(waveEl);
 
 const style = computed<StyleValue>(() => {
@@ -34,6 +54,18 @@ const style = computed<StyleValue>(() => {
   };
 });
 
+const { marquee, reset } = useMarquee(waveEl);
+watch(repeatWrapper, (val) => {
+  if (!val || !waveEl.value) return;
+  marquee();
+});
+onBeforeMount(() => {
+  window.addEventListener("resize", reset);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", reset);
+});
+
 const smoothRatio = computed(() => {
   if (typeof props.smooth === "number") {
     return props.smooth > 1 ? 1 : props.smooth < 0 ? 0 : props.smooth;
@@ -44,7 +76,7 @@ const smoothRatio = computed(() => {
   }
 });
 
-const processedPoles = computed<WaveParameters[]>(() => {
+const processedPoles = computed<PoleParameters[]>(() => {
   if (!props.closure) return props.poles;
   const poles = [...props.poles];
   const firstPole = poles[0];
@@ -157,12 +189,72 @@ const wavePath = computed<string>(() => {
     }, "") + ` L${getLengthPercentNumber(sumDistance, waveLength.value)} 101Z`
   );
 });
+
+const wavePathUpsideDown = computed<string>(() => {
+  let sumDistance = 0;
+  return (
+    polesPixelNumberArray.value.reduce((acc, [d, h], index, arr) => {
+      const avgDistanceBetweenPrev = average(d, 0);
+      const controlPointDistance = sumDistance + avgDistanceBetweenPrev;
+      const poleSvgY = h;
+      const poleSvgYPercent = getLengthPercentNumber(
+        poleSvgY,
+        waveElHeight.value,
+      );
+
+      if (index === 0) {
+        return (acc += `M0 101 L0 ${poleSvgYPercent}`);
+      } else {
+        const prevPoleSvgY = arr[index - 1][1];
+        const prevPoleSvgYPercent = getLengthPercentNumber(
+          prevPoleSvgY,
+          waveElHeight.value,
+        );
+
+        let smoothness = 0;
+        if (index !== arr.length - 1 && index !== 1) {
+          const avgDistanceBetweenNext = average(arr[index + 1][0], 0);
+
+          if (avgDistanceBetweenPrev >= avgDistanceBetweenNext) {
+            smoothness = 0;
+          } else {
+            const ratio =
+              (avgDistanceBetweenPrev + avgDistanceBetweenNext) /
+              avgDistanceBetweenNext;
+            smoothness = props.smooth
+              ? ratio * avgDistanceBetweenPrev * smoothRatio.value
+              : 0;
+          }
+        }
+
+        const firstControlPoint = `${getLengthPercentNumber(
+          controlPointDistance + smoothness,
+          waveLength.value,
+        )} ${prevPoleSvgYPercent}`;
+        const secondControlPoint = `${getLengthPercentNumber(
+          controlPointDistance - smoothness,
+          waveLength.value,
+        )} ${poleSvgYPercent}`;
+
+        sumDistance += d;
+
+        const end = `${getLengthPercentNumber(
+          sumDistance,
+          waveLength.value,
+        )} ${poleSvgYPercent}`;
+
+        return (acc += ` C${firstControlPoint}, ${secondControlPoint}, ${end}`);
+      }
+    }, "") + ` L${getLengthPercentNumber(sumDistance, waveLength.value)} 101Z`
+  );
+});
 </script>
 
 <template>
   <div ref="waveEl" class="vue-wave" :style="style">
     <div
       v-if="waveElWidth"
+      ref="repeatWrapper"
       class="vue-wave__repeat-wrapper"
       :style="{ width: waveLength * repeatTimes + 'px' }"
     >
@@ -175,7 +267,14 @@ const wavePath = computed<string>(() => {
         viewBox="0,0,100,100"
         preserveAspectRatio="none"
       >
-        <path :d="wavePath" :fill="color"></path>
+        <path :d="wavePath" :fill="color">
+          <animate
+            attributeName="d"
+            :values="`${wavePath}; ${wavePathUpsideDown}; ${wavePath}`"
+            dur="2s"
+            repeatCount="indefinite"
+          />
+        </path>
       </svg>
     </div>
   </div>
@@ -185,11 +284,16 @@ const wavePath = computed<string>(() => {
 .vue-wave {
   position: relative;
   z-index: 1;
+  display: flex;
   overflow: hidden;
 
   &__repeat-wrapper {
     display: flex;
     height: 100%;
+  }
+
+  svg {
+    display: block;
   }
 }
 </style>

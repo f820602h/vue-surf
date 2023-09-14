@@ -1,10 +1,13 @@
 export type Length = number | string;
 
-export type WaveParametersObject = {
-  distance: Length;
-  height: Length;
+export type PoleParametersObject = { distance: Length; height: Length };
+export type PoleParametersTuple = [
+  PoleParametersObject["distance"],
+  PoleParametersObject["height"],
+];
+export type PoleParameters = PoleParametersObject | PoleParametersTuple;
+
+export type WaveAnimationParametersObject = {
+  newHeight: PoleParametersObject["height"][];
+  duration: number;
 };
-
-export type WaveParametersTuple = [Length, Length];
-
-export type WaveParameters = WaveParametersObject | WaveParametersTuple;
