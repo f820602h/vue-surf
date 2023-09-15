@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { StyleValue, ref, computed, watch, nextTick } from "vue";
+import { StyleValue, ref, computed, watch, nextTick, onBeforeMount } from "vue";
 import type { WaveProps, WaveExpose, PoleParameters } from "../types";
 import {
   getLengthPixelNumber,
@@ -7,8 +7,13 @@ import {
   average,
 } from "../utils";
 import { useMarquee } from "../composables/marquee";
-import { useTimestamp } from "@vueuse/core";
+import { useFps } from "@vueuse/core";
+import { useRafFn } from "@vueuse/core";
 import { useElementSize } from "@vueuse/core";
+
+const emit = defineEmits<{
+  (e: "onPolesChanged", currentPoles: PoleParameters[]): void;
+}>();
 
 const props = withDefaults(defineProps<WaveProps>(), {
   poles: undefined,
@@ -21,17 +26,37 @@ const props = withDefaults(defineProps<WaveProps>(), {
   marquee: true,
   marqueeSpeed: 2,
   transitionDuration: 500,
-  polesSeriesTransformDuration: 500,
+  polesSeriesTransformDuration: undefined,
 });
 
-const {
-  timestamp: timestamp,
-  pause: pausePolesSeriesTransform,
-  resume: playPolesSeriesTransform,
-} = useTimestamp({ controls: true });
-const counter = computed<number>(() =>
-  Math.floor(timestamp.value / props.polesSeriesTransformDuration),
+const fps = useFps();
+const timestamp = ref(0);
+const { pause: pausePolesSeriesTransform, resume: playPolesSeriesTransform } =
+  useRafFn(({ delta }) => {
+    if (delta > fps.value * 3) return;
+    timestamp.value += delta;
+  });
+
+onBeforeMount(() => {
+  pausePolesSeriesTransform();
+  if (props.polesSeries && props.polesSeries.length > 0) {
+    playPolesSeriesTransform();
+  }
+});
+watch(
+  () => props.polesSeries,
+  (val) => {
+    if (val && val.length > 0) playPolesSeriesTransform();
+    else pausePolesSeriesTransform();
+  },
 );
+
+const duration = computed<number>(() => {
+  return props.polesSeriesTransformDuration || props.transitionDuration;
+});
+const counter = computed<number>(() => {
+  return Math.floor(timestamp.value / duration.value);
+});
 const polesSeriesIndex = computed<number>(() => {
   if (!props.polesSeries) return 0;
   return (2 + counter.value) % props.polesSeries.length;
@@ -42,7 +67,7 @@ const currentPoles = computed<PoleParameters[]>(() => {
   } else if (props.poles) {
     return props.poles;
   } else {
-    throw new Error("No poles provided");
+    throw new Error("[Vue Wave] No poles provided");
   }
 });
 
@@ -118,7 +143,7 @@ function getPolesPixelNumberArray(poles: PoleParameters[]): number[][] {
         getLengthPixelNumber(pole.height, waveElWidth.value),
       ];
     } else {
-      throw new Error(`Invalid pole format ${JSON.stringify(pole)}`);
+      throw new Error(`[Vue Wave] Invalid pole format ${JSON.stringify(pole)}`);
     }
   });
 }
@@ -215,6 +240,7 @@ watch(
     if (oldVal && newVal.length !== oldVal.length) {
       console.warn("Poles length changed, animation may be broke.");
     }
+    emit("onPolesChanged", newVal);
   },
 );
 

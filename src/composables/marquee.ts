@@ -13,10 +13,10 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
   function step(): void {
     if (isStop.value) return;
     if (!elementRef.value) {
-      throw new Error("Element not found");
+      throw new Error("[Vue Wave] Element not found");
     }
     if (!(elementRef.value.children[0] instanceof HTMLElement)) {
-      throw new Error("Element is not HTMLElement");
+      throw new Error("[Vue Wave] Element is not HTMLElement");
     }
 
     const element = elementRef.value.children[0];

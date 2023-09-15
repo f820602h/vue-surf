@@ -15,7 +15,7 @@ export function getLengthPixelNumber(length: Length, total: number): number {
       if (match) return Math.round((Number(match[1]) * total) / 100);
     }
   }
-  throw new Error(`Invalid Pole format '${length}'`);
+  throw new Error(`[Vue Wave] Invalid Pole format '${length}'`);
 }
 
 export function getLengthPercentNumber(length: Length, total: number): number {
@@ -30,7 +30,7 @@ export function getLengthPercentNumber(length: Length, total: number): number {
       if (match) return Number(match[1]);
     }
   }
-  throw new Error(`Invalid Pole format ${length}`);
+  throw new Error(`[Vue Wave] Invalid Pole format ${length}`);
 }
 
 export function average(...arg: number[]): number {
