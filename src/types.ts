@@ -6,3 +6,25 @@ export type PoleParametersTuple = [
   PoleParametersObject["height"],
 ];
 export type PoleParameters = PoleParametersObject | PoleParametersTuple;
+
+export type WaveProps = {
+  width: Length;
+  side?: "top" | "bottom";
+  poles?: PoleParameters[];
+  polesSeries?: PoleParameters[][];
+  color?: string;
+  repeat?: boolean;
+  closure?: boolean;
+  smooth?: boolean | number;
+  marquee?: boolean;
+  marqueeSpeed?: number;
+  transitionDuration?: number;
+  polesSeriesTransformDuration?: number;
+};
+
+export type WaveExpose = {
+  playMarquee: () => void;
+  pauseMarquee: () => void;
+  playPolesSeriesTransform: () => void;
+  pausePolesSeriesTransform: () => void;
+};
