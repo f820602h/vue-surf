@@ -2,21 +2,14 @@ import { Ref, ref } from "vue";
 
 export function useMarquee(elementRef: Ref<HTMLElement | null>, speed = 0) {
   const initOffset = Math.min(2 + speed, 10);
-
-  const clone = ref<string>("");
   const isStart = ref<number>(0);
   const offset = ref<number>(initOffset);
   const reqFrame = ref<number>(0);
 
-  const resetting = ref<boolean>(false);
-
   function marquee() {
     if (!elementRef.value) throw new Error("Element not found");
-    clone.value = elementRef.value.innerHTML;
     const firstElement = elementRef.value.children[0];
     let i = 0;
-    elementRef.value.insertAdjacentHTML("beforeend", clone.value);
-    elementRef.value.insertAdjacentHTML("beforeend", clone.value);
 
     function step(timestamp: number) {
       if (!isStart.value) isStart.value = timestamp;
@@ -30,20 +23,6 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed = 0) {
     }
 
     reqFrame.value = window.requestAnimationFrame(step);
-  }
-
-  function reset() {
-    if (resetting.value) return;
-    resetting.value = true;
-
-    window.cancelAnimationFrame(reqFrame.value);
-    if (!elementRef.value) throw new Error("Element not found");
-    elementRef.value.innerHTML = clone.value;
-    marquee();
-
-    window.setTimeout(() => {
-      resetting.value = false;
-    }, 300);
   }
 
   function stop() {
@@ -70,7 +49,6 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed = 0) {
 
   return {
     marquee,
-    reset,
     start,
     stop,
   };

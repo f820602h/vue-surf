@@ -6,8 +6,3 @@ export type PoleParametersTuple = [
   PoleParametersObject["height"],
 ];
 export type PoleParameters = PoleParametersObject | PoleParametersTuple;
-
-export type WaveAnimationParametersObject = {
-  newHeight: PoleParametersObject["height"][];
-  duration: number;
-};

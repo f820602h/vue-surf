@@ -1,30 +1,18 @@
 <script setup lang="ts">
-import {
-  StyleValue,
-  ref,
-  computed,
-  watch,
-  onBeforeMount,
-  onBeforeUnmount,
-} from "vue";
-import type {
-  Length,
-  PoleParameters,
-  WaveAnimationParametersObject,
-} from "../types";
+import { StyleValue, ref, computed, watch, nextTick } from "vue";
+import type { Length, PoleParameters } from "../types";
 import {
   getLengthPixelNumber,
   getLengthPercentNumber,
   average,
 } from "../utils";
-import { useMarquee } from "../composables/marquee";
+// import { useMarquee } from "../composables/marquee";
 import { useElementSize } from "@vueuse/core";
 
 const props = withDefaults(
   defineProps<{
     width: Length;
     poles: PoleParameters[];
-    animate?: WaveAnimationParametersObject;
     color?: string;
     repeat?: boolean;
     closure?: boolean;
@@ -35,36 +23,17 @@ const props = withDefaults(
     repeat: true,
     closure: true,
     smooth: true,
-    animate: undefined,
   },
 );
 
 const waveEl = ref<HTMLElement | null>(null);
-const repeatWrapper = ref<HTMLElement | null>(null);
 const { width: waveElWidth, height: waveElHeight } = useElementSize(waveEl);
 
-const style = computed<StyleValue>(() => {
-  const width =
-    typeof props.width === "number" ? `${props.width}px` : props.width;
-  return {
-    width,
-    minWidth: 0,
-    height: `${waveHeight.value}px`,
-    marginTop: `-${waveHeight.value}px`,
-  };
-});
-
-const { marquee, reset } = useMarquee(waveEl);
-watch(repeatWrapper, (val) => {
-  if (!val || !waveEl.value) return;
-  marquee();
-});
-onBeforeMount(() => {
-  window.addEventListener("resize", reset);
-});
-onBeforeUnmount(() => {
-  window.removeEventListener("resize", reset);
-});
+// const { marquee } = useMarquee(waveEl);
+// watch(waveElWidth, (val) => {
+//   if (!val || !waveEl.value) return;
+//   nextTick(() => marquee());
+// });
 
 const smoothRatio = computed(() => {
   if (typeof props.smooth === "number") {
@@ -76,11 +45,11 @@ const smoothRatio = computed(() => {
   }
 });
 
-const processedPoles = computed<PoleParameters[]>(() => {
-  if (!props.closure) return props.poles;
-  const poles = [...props.poles];
-  const firstPole = poles[0];
-  const lastPole = poles[poles.length - 1];
+function closurePoles(poles: PoleParameters[]) {
+  if (!props.closure) return poles;
+  const resultPoles = [...poles];
+  const firstPole = resultPoles[0];
+  const lastPole = resultPoles[resultPoles.length - 1];
 
   const firstPoleHeight = Array.isArray(firstPole)
     ? firstPole[1]
@@ -93,14 +62,15 @@ const processedPoles = computed<PoleParameters[]>(() => {
     ? lastPole.distance
     : 0;
 
-  poles[0] = [0, firstPoleHeight];
-  poles[poles.length - 1] = [lastPoleDistance, firstPoleHeight];
+  resultPoles[0] = [0, firstPoleHeight];
+  resultPoles[resultPoles.length - 1] = [lastPoleDistance, firstPoleHeight];
 
-  return poles;
-});
+  return resultPoles;
+}
 
-const polesPixelNumberArray = computed<number[][]>(() => {
-  return processedPoles.value.map((pole) => {
+function getPolesPixelNumberArray(poles: PoleParameters[]): number[][] {
+  const processedPoles = closurePoles(poles);
+  return processedPoles.map((pole) => {
     if (Array.isArray(pole)) {
       return [
         getLengthPixelNumber(pole[0], waveElWidth.value),
@@ -115,26 +85,23 @@ const polesPixelNumberArray = computed<number[][]>(() => {
       throw new Error(`Invalid pole format ${JSON.stringify(pole)}`);
     }
   });
-});
+}
 
-const waveHeight = computed<number>(() => {
-  return Math.max(...polesPixelNumberArray.value.map(([, h]) => h));
-});
+function getHightestPoleHeight(poles: PoleParameters[]): number {
+  return Math.max(...getPolesPixelNumberArray(poles).map(([, h]) => h));
+}
 
-const waveLength = computed<number>(() => {
-  return polesPixelNumberArray.value.reduce((acc, [d]) => acc + d, 0);
-});
+function getPoleDistanceSum(poles: PoleParameters[]) {
+  return getPolesPixelNumberArray(poles).reduce((acc, [d]) => acc + d, 0);
+}
 
-const repeatTimes = computed<number>(() => {
-  if (!waveElWidth.value) return 0;
-  if (!props.repeat) return 1;
-  return Math.ceil(waveElWidth.value / waveLength.value);
-});
-
-const wavePath = computed<string>(() => {
+function getWavePath(poles: PoleParameters[]) {
+  const polesPixelNumberArray = getPolesPixelNumberArray(poles);
   let sumDistance = 0;
-  return (
-    polesPixelNumberArray.value.reduce((acc, [d, h], index, arr) => {
+  let path = "";
+
+  for (let time = 0; time < repeatTimes.value; time++) {
+    path += polesPixelNumberArray.reduce((acc, [d, h], index, arr) => {
       const avgDistanceBetweenPrev = average(d, 0);
       const controlPointDistance = sumDistance + avgDistanceBetweenPrev;
       const poleSvgY = waveElHeight.value - h;
@@ -144,7 +111,7 @@ const wavePath = computed<string>(() => {
       );
 
       if (index === 0) {
-        return (acc += `M0 101 L0 ${poleSvgYPercent}`);
+        return (acc += `${poleSvgYPercent}`);
       } else {
         const prevPoleSvgY = waveElHeight.value - arr[index - 1][1];
         const prevPoleSvgYPercent = getLengthPercentNumber(
@@ -156,127 +123,111 @@ const wavePath = computed<string>(() => {
         if (index !== arr.length - 1 && index !== 1) {
           const avgDistanceBetweenNext = average(arr[index + 1][0], 0);
 
-          if (avgDistanceBetweenPrev >= avgDistanceBetweenNext) {
-            smoothness = 0;
-          } else {
-            const ratio =
-              (avgDistanceBetweenPrev + avgDistanceBetweenNext) /
-              avgDistanceBetweenNext;
-            smoothness = props.smooth
-              ? ratio * avgDistanceBetweenPrev * smoothRatio.value
-              : 0;
+          const prev = avgDistanceBetweenPrev;
+          const next = avgDistanceBetweenNext;
+          if (prev < next) {
+            const ratio = (prev + next) / next;
+            smoothness = props.smooth ? ratio * prev * smoothRatio.value : 0;
           }
         }
 
         const firstControlPoint = `${getLengthPercentNumber(
           controlPointDistance + smoothness,
-          waveLength.value,
+          waveLength.value * repeatTimes.value,
         )} ${prevPoleSvgYPercent}`;
         const secondControlPoint = `${getLengthPercentNumber(
           controlPointDistance - smoothness,
-          waveLength.value,
+          waveLength.value * repeatTimes.value,
         )} ${poleSvgYPercent}`;
 
         sumDistance += d;
-
+        const isLast =
+          index === arr.length - 1 && time !== repeatTimes.value - 1;
         const end = `${getLengthPercentNumber(
           sumDistance,
-          waveLength.value,
-        )} ${poleSvgYPercent}`;
+          waveLength.value * repeatTimes.value,
+        )} ${isLast ? "" : poleSvgYPercent}`;
 
         return (acc += ` C${firstControlPoint}, ${secondControlPoint}, ${end}`);
       }
-    }, "") + ` L${getLengthPercentNumber(sumDistance, waveLength.value)} 101Z`
-  );
+    }, "");
+  }
+  // console.log(`M0 101 L0 ${path} L100 101Z`);
+  return `M0 101 L0 ${path} L100 101Z`;
+}
+
+const polesRef = ref(props.poles);
+const waveHeight = ref(0);
+const waveLength = ref(0);
+watch(
+  () => props.poles,
+  async (newVal, oldVal) => {
+    const newWaveWidth = getHightestPoleHeight(newVal);
+    const newWaveLength = getPoleDistanceSum(newVal);
+    if (oldVal && newVal.length !== oldVal.length) {
+      console.warn("Poles length changed, animation will be glitchy.");
+      return;
+    }
+    // if (oldVal && newWaveWidth !== waveHeight.value) {
+    //   console.warn("Poles height changed, animation will be glitchy.");
+    //   return;
+    // }
+    // if (oldVal && newWaveLength !== waveLength.value) {
+    //   console.warn("Poles distance changed, animation will be glitchy.");
+    //   return;
+    // }
+    // console.log(repeatTimes.value);
+    waveHeight.value = newWaveWidth;
+    waveLength.value = newWaveLength;
+    // console.log(repeatTimes.value);
+
+    nextTick(() => (polesRef.value = newVal));
+  },
+  { immediate: true },
+);
+
+const repeatTimes = computed<number>(() => {
+  if (!waveElWidth.value) return 0;
+  if (!props.repeat) return 1;
+  return Math.ceil(waveElWidth.value / waveLength.value);
 });
 
-const wavePathUpsideDown = computed<string>(() => {
-  let sumDistance = 0;
-  return (
-    polesPixelNumberArray.value.reduce((acc, [d, h], index, arr) => {
-      const avgDistanceBetweenPrev = average(d, 0);
-      const controlPointDistance = sumDistance + avgDistanceBetweenPrev;
-      const poleSvgY = h;
-      const poleSvgYPercent = getLengthPercentNumber(
-        poleSvgY,
-        waveElHeight.value,
-      );
+watch(repeatTimes, (n, o) => {
+  console.log(n, o);
+});
 
-      if (index === 0) {
-        return (acc += `M0 101 L0 ${poleSvgYPercent}`);
-      } else {
-        const prevPoleSvgY = arr[index - 1][1];
-        const prevPoleSvgYPercent = getLengthPercentNumber(
-          prevPoleSvgY,
-          waveElHeight.value,
-        );
+const style = computed<StyleValue>(() => {
+  const width =
+    typeof props.width === "number" ? `${props.width}px` : props.width;
+  const height = `${waveHeight.value}px`;
+  return { width, height, marginTop: `-${height}` };
+});
 
-        let smoothness = 0;
-        if (index !== arr.length - 1 && index !== 1) {
-          const avgDistanceBetweenNext = average(arr[index + 1][0], 0);
-
-          if (avgDistanceBetweenPrev >= avgDistanceBetweenNext) {
-            smoothness = 0;
-          } else {
-            const ratio =
-              (avgDistanceBetweenPrev + avgDistanceBetweenNext) /
-              avgDistanceBetweenNext;
-            smoothness = props.smooth
-              ? ratio * avgDistanceBetweenPrev * smoothRatio.value
-              : 0;
-          }
-        }
-
-        const firstControlPoint = `${getLengthPercentNumber(
-          controlPointDistance + smoothness,
-          waveLength.value,
-        )} ${prevPoleSvgYPercent}`;
-        const secondControlPoint = `${getLengthPercentNumber(
-          controlPointDistance - smoothness,
-          waveLength.value,
-        )} ${poleSvgYPercent}`;
-
-        sumDistance += d;
-
-        const end = `${getLengthPercentNumber(
-          sumDistance,
-          waveLength.value,
-        )} ${poleSvgYPercent}`;
-
-        return (acc += ` C${firstControlPoint}, ${secondControlPoint}, ${end}`);
-      }
-    }, "") + ` L${getLengthPercentNumber(sumDistance, waveLength.value)} 101Z`
-  );
+const wavePath = computed<string>(() => {
+  return getWavePath(polesRef.value);
 });
 </script>
 
 <template>
   <div ref="waveEl" class="vue-wave" :style="style">
-    <div
-      v-if="waveElWidth"
-      ref="repeatWrapper"
-      class="vue-wave__repeat-wrapper"
-      :style="{ width: waveLength * repeatTimes + 'px' }"
-    >
-      <svg
-        v-for="i in repeatTimes"
-        :key="i"
-        xmlns="http://www.w3.org/2000/svg"
-        :width="waveLength"
-        height="100%"
-        viewBox="0,0,100,100"
-        preserveAspectRatio="none"
+    <template v-if="waveElWidth">
+      <div
+        v-for="j in 3"
+        :key="j"
+        class="vue-wave__repeat-wrapper"
+        :style="{ width: waveLength * repeatTimes + 'px' }"
       >
-        <path :d="wavePath" :fill="color">
-          <animate
-            attributeName="d"
-            :values="`${wavePath}; ${wavePathUpsideDown}; ${wavePath}`"
-            dur="2s"
-            repeatCount="indefinite"
-          />
-        </path>
-      </svg>
-    </div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          :width="waveLength * repeatTimes + 'px'"
+          :height="waveHeight + 'px'"
+          viewBox="0,0,100,100"
+          preserveAspectRatio="none"
+        >
+          <path :d="wavePath" :fill="color"></path>
+        </svg>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -285,15 +236,31 @@ const wavePathUpsideDown = computed<string>(() => {
   position: relative;
   z-index: 1;
   display: flex;
+  align-items: flex-end;
   overflow: hidden;
+  transition:
+    height 0.2s linear,
+    margin 0.2s linear;
 
   &__repeat-wrapper {
+    flex-shrink: 0;
     display: flex;
+    align-items: flex-end;
     height: 100%;
+    transition:
+      width 0.2s linear,
+      height 0.2s linear;
   }
 
   svg {
-    display: block;
+    flex-shrink: 0;
+    transition:
+      width 0.2s linear,
+      height 0.2s linear;
+
+    path {
+      transition: 0.2s linear;
+    }
   }
 }
 </style>
