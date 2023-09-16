@@ -169,6 +169,184 @@ repeat: {
 ```
 The decision to automatically repeat is contingent upon whether the cumulative `distance` set by an `apexes` is insufficient to cover the entire `width` of the wave.
 
+```html
+<template>
+  <section />
+  <VueSurf
+    :width="800"
+    :apexes="[[0, 50], [100, 0], [100, 50]]"
+    :repeat="false"
+  />
+</template>
+```
+<img src="./graphs/repeat.png" alt="repeat" width="60%">
+
+<br/>
+
+### closure
+```typescript
+closure: {
+  type: Boolean,
+  default: true,
+}
+```
+To facilitate a natural alignment of repeated waves, the height of the last apex in an `apexes` will automatically align with the height of the first apex. You can set it to `false` to disable this behavior.
+
+```html
+<template>
+  <section />
+  <VueSurf
+    :width="800"
+    :apexes="[[0, 50], [100, 0], [100, 100]]" // higher then first apex
+    :closure="false"
+  />
+</template>
+```
+<img src="./graphs/closure.png" alt="closure" width="60%">
+
+<br/>
+
+### smooth
+```typescript
+smooth: {
+  type: [Boolean, Number],
+  default: true,
+}
+```
+At times, when you configure a significant difference in distance between consecutive apexes, the presentation of the wave may not appear as smooth.
+
+To mitigate such outcomes, we perform certain calculations. However, you have the option to set it to `false` to disable this behavior.
+
+Alternatively, you can provide a `number` value between 0 and 1 to adjust the level of smoothness.
+
+```html
+<template>
+  <section />
+  <VueSurf
+    :width="800"
+    :apexes="[ 
+      [0, 50],
+      [100, 0],
+      [50, 100],
+      [200, 0],
+      [100, 50]
+    ]"
+    :smooth="false"
+  />
+</template>
+```
+<p align="center" float="left">
+  <img src="./graphs/smooth-true.png" alt="smooth-true" width="45%">
+  <img src="./graphs/smooth-false.png" alt="smooth-false" width="45%">
+</p>
+
+>If the numerical disparities are indeed substantial, the extent of smoothing may still remain limited
+
+<br/>
+
+### marquee
+```typescript
+marquee: {
+  type: Boolean,
+  default: true,
+}
+```
+When you use <VueSurf>, the marquee animation effect will automatically activate. You can set it to `false` to deactivate the animation.
+
+<img src="./graphs/marquee.gif" alt="marquee" width="60%">
+
+<br/>
+
+### marqueeSpeed
+```typescript
+marqueeSpeed: {
+  type: Number,
+  default: 2,
+}
+```
+It accepts a `number` value ranging from -25 to 25 to control the speed of the marquee animation. When the value is greater than 0, the animation moves to the right; when less than 0, it moves to the left.
+
+<br/>
+
+### transitionDuration
+```typescript
+transitionDuration: {
+  type: Number,
+  default: 500,
+}
+```
+When you dynamically update the `apexes` or use the `apexesSeries`, the wave undergoes a transformation animation. You can pass a `number` value to adjust the transition duration. The unit is millisecond.
+
+<br/>
+
+### apexesSeriesTransformDuration
+```typescript
+apexesSeriesTransformDuration: {
+  type: Number,
+  default: undefined,
+}
+```
+To achieve a seamless animation effect, when no value is specified, it defaults to being the same as `transitionDuration`.
+
+<br/>
+
+### onApexesChanged
+```typescript
+onApexesChanged: {
+  type: Function as PropType<(currentApexes: ApexParameters[]) => void>,
+  default: undefined,
+}
+```
+A callback function that is invoked when there is an update to the apexes.
+
+## Exposed Methods
+
+```html
+<script setup>
+import { VueSurf } from "vue-surf";
+
+const vueSurf = ref(null)
+</script>
+
+<template>
+  <VueSurf
+    ref="vueSurf"
+    :width="800"
+    :apexes="[[0, 50], [100, 0], [100, 50]]"
+  />
+  <section
+    @mouseenter="vueSurfRef?.pauseMarquee()"
+    @mouseleave="vueSurfRef?.playMarquee()"
+  />
+</template>
+```
+
+```typescript
+type WaveExpose = {
+  playMarquee: () => void;
+  pauseMarquee: () => void;
+  playApexesSeriesTransform: () => void;
+  pauseApexesSeriesTransform: () => void;
+};
+```
+
+### pauseMarquee
+Gradually pause the marquee animation. If you wish to pause immediately, you can toggle the `marquee` to `false`.
+
+<br/>
+
+### playMarquee
+Gradually resume the marquee animation. If you wish to play immediately, you can toggle the `marquee` to `true`.
+
+<br/>
+
+### pauseApexesSeriesTransform
+Resume the apexes transformation animation.
+
+<br/>
+
+### playApexesSeriesTransform
+Resume the apexes transformation animation.
 
 ## License
 

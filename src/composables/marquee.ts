@@ -29,11 +29,13 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
 
   function startMarquee(): void {
     isStop.value = false;
+    currentSpeed.value = initSpeed.value;
     reqFrame.value = window.requestAnimationFrame(step);
   }
 
   function stopMarquee(): void {
     isStop.value = true;
+    currentSpeed.value = 0;
     window.cancelAnimationFrame(reqFrame.value);
   }
 
@@ -43,23 +45,24 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
   }
 
   function playMarquee(): void {
-    if (currentSpeed.value >= initSpeed.value) return;
+    isStop.value = false;
+    if (Math.abs(currentSpeed.value) >= Math.abs(initSpeed.value)) return;
     const step = initSpeed.value / 200;
     let timer = 0;
 
     timer = window.setInterval(() => {
-      if (currentSpeed.value >= 10) window.clearInterval(timer);
+      if (Math.abs(currentSpeed.value) >= 25) window.clearInterval(timer);
       currentSpeed.value += step;
     }, 1);
   }
 
   function pauseMarquee(): void {
-    if (currentSpeed.value <= 0) return;
+    if (Math.abs(currentSpeed.value) <= 0) isStop.value = true;
     const step = initSpeed.value / 200;
     let timer = 0;
 
     timer = window.setInterval(() => {
-      if (currentSpeed.value <= 0) window.clearInterval(timer);
+      if (Math.abs(currentSpeed.value) <= 0) window.clearInterval(timer);
       currentSpeed.value -= step;
     }, 1);
   }
