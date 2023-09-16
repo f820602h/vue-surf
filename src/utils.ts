@@ -1,9 +1,10 @@
-import type { Length } from "./types";
-
 const pixelRegex = /(\d+)px/;
 const percentRegex = /(\d+)%/;
 
-export function getLengthPixelNumber(length: Length, total: number): number {
+export function getLengthPixelNumber(
+  length: number | string,
+  total: number,
+): number {
   if (typeof length === "number") {
     return length;
   } else if (typeof length === "string") {
@@ -15,10 +16,13 @@ export function getLengthPixelNumber(length: Length, total: number): number {
       if (match) return Math.round((Number(match[1]) * total) / 100);
     }
   }
-  throw new Error(`[Vue Wave] Invalid Pole format '${length}'`);
+  throw new Error(`[Vue Wave] Invalid Apex format '${length}'`);
 }
 
-export function getLengthPercentNumber(length: Length, total: number): number {
+export function getLengthPercentNumber(
+  length: number | string,
+  total: number,
+): number {
   if (typeof length === "number") {
     return Number(((length / total) * 100).toFixed(2));
   } else if (typeof length === "string") {
@@ -30,7 +34,7 @@ export function getLengthPercentNumber(length: Length, total: number): number {
       if (match) return Number(match[1]);
     }
   }
-  throw new Error(`[Vue Wave] Invalid Pole format ${length}`);
+  throw new Error(`[Vue Wave] Invalid Apex format ${length}`);
 }
 
 export function average(...arg: number[]): number {

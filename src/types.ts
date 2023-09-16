@@ -1,17 +1,18 @@
-export type Length = number | string;
-
-export type PoleParametersObject = { distance: Length; height: Length };
-export type PoleParametersTuple = [
-  PoleParametersObject["distance"],
-  PoleParametersObject["height"],
+export type ApexParametersObject = {
+  distance: number | string;
+  height: number | string;
+};
+export type ApexParametersTuple = [
+  ApexParametersObject["distance"],
+  ApexParametersObject["height"],
 ];
-export type PoleParameters = PoleParametersObject | PoleParametersTuple;
+export type ApexParameters = ApexParametersObject | ApexParametersTuple;
 
 export type WaveProps = {
-  width: Length;
+  width?: number | string;
   side?: "top" | "bottom";
-  poles?: PoleParameters[];
-  polesSeries?: PoleParameters[][];
+  apexes?: ApexParameters[];
+  apexesSeries?: ApexParameters[][];
   color?: string;
   repeat?: boolean;
   closure?: boolean;
@@ -19,13 +20,13 @@ export type WaveProps = {
   marquee?: boolean;
   marqueeSpeed?: number;
   transitionDuration?: number;
-  polesSeriesTransformDuration?: number;
-  onPolesChanged?: (poles: PoleParameters[]) => void;
+  apexesSeriesTransformDuration?: number;
+  onApexesChanged?: (currentApexes: ApexParameters[]) => void;
 };
 
 export type WaveExpose = {
   playMarquee: () => void;
   pauseMarquee: () => void;
-  playPolesSeriesTransform: () => void;
-  pausePolesSeriesTransform: () => void;
+  playApexesSeriesTransform: () => void;
+  pauseApexesSeriesTransform: () => void;
 };

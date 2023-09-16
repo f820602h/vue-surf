@@ -1,9 +1,15 @@
 {
   "name": "vue-surf",
-  "description": "A very customizable animated wave component for Vue 3.",
+  "description": "Very customized animated svg wave Vue component",
   "private": false,
-  "version": "0.1.1",
+  "version": "0.1.11",
+  "author": "max.lee <f820602h7@gmail.com>",
   "license": "MIT",
+  "homepage": "https://github.com/f820602h/vue-surf#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/f820602h/vue-surf.git"
+  },
   "keywords": [
     "vue",
     "animation",
@@ -25,7 +31,6 @@
   },
   "scripts": {
     "build": "pkgroll",
-    "dev": "pkgroll --watch",
     "lint": "eslint .",
     "typecheck": "vue-tsc --noEmit"
   },
@@ -37,7 +42,6 @@
     "@rushstack/eslint-patch": "^1.1.0",
     "@types/node": "^20.6.1",
     "@vitejs/plugin-vue": "^4.2.3",
-    "@vitejs/plugin-vue-jsx": "^3.0.2",
     "@vue/eslint-config-prettier": "^8.0.0",
     "@vue/eslint-config-typescript": "^11.0.3",
     "eslint": "^8.49.0",

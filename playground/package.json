@@ -2,13 +2,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port 9527 --open",
+    "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "vue": "^3.3.4",
-    "vue-surf": "^0.1.1"
+    "vue-surf": "0.1.11"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",

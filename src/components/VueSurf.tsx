@@ -1,4 +1,4 @@
-import type { WaveProps, WaveExpose, PoleParameters } from "../types";
+import type { WaveProps, WaveExpose, ApexParameters } from "../types";
 import type { DefineComponent, PropType, StyleValue } from "vue";
 import {
   ref,
@@ -8,6 +8,8 @@ import {
   onBeforeMount,
   defineComponent,
   TransitionGroup,
+  h,
+  toRef,
 } from "vue";
 import {
   getLengthPixelNumber,
@@ -24,12 +26,12 @@ export const VueSurf = defineComponent({
       type: [Number, String],
       default: "100%",
     },
-    poles: {
-      type: Array as () => PoleParameters[],
+    apexes: {
+      type: Array as () => ApexParameters[],
       default: undefined,
     },
-    polesSeries: {
-      type: Array as () => PoleParameters[][],
+    apexesSeries: {
+      type: Array as () => ApexParameters[][],
       default: undefined,
     },
     side: {
@@ -64,12 +66,12 @@ export const VueSurf = defineComponent({
       type: Number,
       default: 500,
     },
-    polesSeriesTransformDuration: {
+    apexesSeriesTransformDuration: {
       type: Number,
       default: undefined,
     },
-    onPolesChanged: {
-      type: Function as PropType<(currentPoles: PoleParameters[]) => void>,
+    onApexesChanged: {
+      type: Function as PropType<(currentApexes: ApexParameters[]) => void>,
       default: undefined,
     },
   },
@@ -77,44 +79,44 @@ export const VueSurf = defineComponent({
     const fps = useFps();
     const timestamp = ref(0);
     const {
-      pause: pausePolesSeriesTransform,
-      resume: playPolesSeriesTransform,
+      pause: pauseApexesSeriesTransform,
+      resume: playApexesSeriesTransform,
     } = useRafFn(({ delta }) => {
       if (delta > fps.value * 3) return;
       timestamp.value += delta;
     });
 
     onBeforeMount(() => {
-      pausePolesSeriesTransform();
-      if (props.polesSeries && props.polesSeries.length > 0) {
-        playPolesSeriesTransform();
+      pauseApexesSeriesTransform();
+      if (props.apexesSeries && props.apexesSeries.length > 0) {
+        playApexesSeriesTransform();
       }
     });
     watch(
-      () => props.polesSeries,
+      () => props.apexesSeries,
       (val) => {
-        if (val && val.length > 0) playPolesSeriesTransform();
-        else pausePolesSeriesTransform();
+        if (val && val.length > 0) playApexesSeriesTransform();
+        else pauseApexesSeriesTransform();
       },
     );
 
     const duration = computed<number>(() => {
-      return props.polesSeriesTransformDuration || props.transitionDuration;
+      return props.apexesSeriesTransformDuration || props.transitionDuration;
     });
     const counter = computed<number>(() => {
       return Math.floor(timestamp.value / duration.value);
     });
-    const polesSeriesIndex = computed<number>(() => {
-      if (!props.polesSeries) return 0;
-      return (2 + counter.value) % props.polesSeries.length;
+    const apexesSeriesIndex = computed<number>(() => {
+      if (!props.apexesSeries) return 0;
+      return (2 + counter.value) % props.apexesSeries.length;
     });
-    const currentPoles = computed<PoleParameters[]>(() => {
-      if (props.polesSeries && props.polesSeries.length > 0) {
-        return props.polesSeries[polesSeriesIndex.value];
-      } else if (props.poles) {
-        return props.poles;
+    const currentApexes = computed<ApexParameters[]>(() => {
+      if (props.apexesSeries && props.apexesSeries.length > 0) {
+        return props.apexesSeries[apexesSeriesIndex.value];
+      } else if (props.apexes) {
+        return props.apexes;
       } else {
-        throw new Error("[Vue Wave] No poles provided");
+        throw new Error("[Vue Wave] No apexes provided");
       }
     });
 
@@ -153,32 +155,35 @@ export const VueSurf = defineComponent({
       }
     });
 
-    function closurePoles(poles: PoleParameters[]) {
-      if (!props.closure) return poles;
-      const resultPoles = [...poles];
-      const firstPole = resultPoles[0];
-      const lastPole = resultPoles[resultPoles.length - 1];
+    function closureApexes(apexes: ApexParameters[]) {
+      if (!props.closure) return apexes;
+      const resultApexes = [...apexes];
+      const firstApex = resultApexes[0];
+      const lastApex = resultApexes[resultApexes.length - 1];
 
-      const firstPoleHeight = Array.isArray(firstPole)
-        ? firstPole[1]
-        : "height" in firstPole
-        ? firstPole.height
+      const firstApexHeight = Array.isArray(firstApex)
+        ? firstApex[1]
+        : "height" in firstApex
+        ? firstApex.height
         : 0;
-      const lastPoleDistance = Array.isArray(lastPole)
-        ? lastPole[0]
-        : "distance" in lastPole
-        ? lastPole.distance
+      const lastApexDistance = Array.isArray(lastApex)
+        ? lastApex[0]
+        : "distance" in lastApex
+        ? lastApex.distance
         : 0;
 
-      resultPoles[0] = [0, firstPoleHeight];
-      resultPoles[resultPoles.length - 1] = [lastPoleDistance, firstPoleHeight];
+      resultApexes[0] = [0, firstApexHeight];
+      resultApexes[resultApexes.length - 1] = [
+        lastApexDistance,
+        firstApexHeight,
+      ];
 
-      return resultPoles;
+      return resultApexes;
     }
 
-    function getPolesPixelNumberArray(poles: PoleParameters[]): number[][] {
-      const processedPoles = closurePoles(poles);
-      return processedPoles.map((pole) => {
+    function getApexesPixelNumberArray(apexes: ApexParameters[]): number[][] {
+      const processedApexes = closureApexes(apexes);
+      return processedApexes.map((pole) => {
         if (Array.isArray(pole)) {
           return [
             getLengthPixelNumber(pole[0], waveElWidth.value),
@@ -197,25 +202,25 @@ export const VueSurf = defineComponent({
       });
     }
 
-    function getHightestPoleHeight(poles: PoleParameters[]): number {
-      return Math.max(...getPolesPixelNumberArray(poles).map(([, h]) => h));
+    function getHightestApexHeight(apexes: ApexParameters[]): number {
+      return Math.max(...getApexesPixelNumberArray(apexes).map(([, h]) => h));
     }
 
-    function getPoleDistanceSum(poles: PoleParameters[]): number {
-      return getPolesPixelNumberArray(poles).reduce((acc, [d]) => acc + d, 0);
+    function getApexDistanceSum(apexes: ApexParameters[]): number {
+      return getApexesPixelNumberArray(apexes).reduce((acc, [d]) => acc + d, 0);
     }
 
     function getHeight(h: number) {
       return props.side === "bottom" ? h : waveHeight.value - h;
     }
 
-    function getWavePath(poles: PoleParameters[]): string {
-      const polesPixelNumberArray = getPolesPixelNumberArray(poles);
+    function getWavePath(apexes: ApexParameters[]): string {
+      const apexesPixelNumberArray = getApexesPixelNumberArray(apexes);
       const origin = props.side === "bottom" ? "-0.1" : "100.1";
       let sumDistance = 0;
       let path = "";
 
-      path += polesPixelNumberArray.reduce((acc, [d, h], index, arr) => {
+      path += apexesPixelNumberArray.reduce((acc, [d, h], index, arr) => {
         const avgDistanceBetweenPrev = average(d, 0);
         const controlPointDistance = sumDistance + avgDistanceBetweenPrev;
         const poleSvgY = getHeight(h);
@@ -227,9 +232,9 @@ export const VueSurf = defineComponent({
         if (index === 0) {
           return (acc += `${poleSvgYPercent}`);
         } else {
-          const prevPoleSvgY = getHeight(arr[index - 1][1]);
-          const prevPoleSvgYPercent = getLengthPercentNumber(
-            prevPoleSvgY,
+          const prevApexSvgY = getHeight(arr[index - 1][1]);
+          const prevApexSvgYPercent = getLengthPercentNumber(
+            prevApexSvgY,
             waveHeight.value,
           );
 
@@ -248,7 +253,7 @@ export const VueSurf = defineComponent({
           const firstControlPoint = `${getLengthPercentNumber(
             controlPointDistance + smoothness,
             waveLength.value,
-          )} ${prevPoleSvgYPercent}`;
+          )} ${prevApexSvgYPercent}`;
           const secondControlPoint = `${getLengthPercentNumber(
             controlPointDistance - smoothness,
             waveLength.value,
@@ -269,30 +274,30 @@ export const VueSurf = defineComponent({
     }
 
     const waveHeight = computed<number>(() => {
-      return getHightestPoleHeight(currentPoles.value);
+      return getHightestApexHeight(currentApexes.value);
     });
 
     const waveLength = computed<number>(() => {
-      return getPoleDistanceSum(currentPoles.value);
+      return getApexDistanceSum(currentApexes.value);
     });
 
+    const isRepeat = toRef(props, "repeat");
     const repeatTimes = computed<number>(() => {
       if (!waveElWidth.value) return 0;
-      if (!props.repeat) return 1;
       return Math.ceil(waveElWidth.value / waveLength.value);
     });
 
     const wavePath = computed<string>(() => {
-      return getWavePath(currentPoles.value);
+      return getWavePath(currentApexes.value);
     });
 
     watch(
-      () => currentPoles.value,
+      () => currentApexes.value,
       async (newVal, oldVal) => {
         if (oldVal && newVal.length !== oldVal.length) {
-          console.warn("Poles length changed, animation may be broke.");
+          console.warn("Apexes length changed, animation may be broke.");
         }
-        props.onPolesChanged?.(newVal);
+        props.onApexesChanged?.(newVal);
       },
     );
 
@@ -346,8 +351,8 @@ export const VueSurf = defineComponent({
     const exposedProps: WaveExpose = {
       playMarquee,
       pauseMarquee,
-      playPolesSeriesTransform,
-      pausePolesSeriesTransform,
+      playApexesSeriesTransform,
+      pauseApexesSeriesTransform,
     };
 
     return {
@@ -355,6 +360,7 @@ export const VueSurf = defineComponent({
       waveElWidth,
       waveHeight,
       waveLength,
+      isRepeat,
       repeatTimes,
       wavePath,
       containerStyle,
@@ -367,6 +373,7 @@ export const VueSurf = defineComponent({
   render() {
     const {
       waveElWidth,
+      isRepeat,
       repeatTimes,
       wavePath,
       containerStyle,
@@ -375,28 +382,37 @@ export const VueSurf = defineComponent({
       pathStyle,
     } = this;
 
-    return (
-      <div ref="waveEl" class="vue-wave" style={containerStyle}>
-        {waveElWidth && (
-          <div class="vue-wave__repeat-wrapper" style={repeatWrapperStyle}>
-            {repeatTimes * 5 > 0 && (
-              <TransitionGroup name="wave">
-                {Array.from({ length: repeatTimes * 5 }).map((_, i) => (
-                  <svg
-                    key={i}
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0,0,100,100"
-                    preserveAspectRatio="none"
-                    style={svgStyle}
-                  >
-                    <path d={wavePath} style={pathStyle}></path>
-                  </svg>
-                ))}
-              </TransitionGroup>
-            )}
-          </div>
-        )}
-      </div>
+    return h(
+      "div",
+      { ref: "waveEl", class: "vue-wave", style: containerStyle },
+      [
+        waveElWidth &&
+          h(
+            "div",
+            { class: "vue-wave__repeat-wrapper", style: repeatWrapperStyle },
+            [
+              repeatTimes * 5 > 0 &&
+                h(TransitionGroup, { name: "wave" }, () => [
+                  Array.from({ length: repeatTimes * 5 }).map((_, i) =>
+                    h(
+                      "svg",
+                      {
+                        key: i,
+                        xmlns: "http://www.w3.org/2000/svg",
+                        viewBox: "0,0,100,100",
+                        preserveAspectRatio: "none",
+                        style: svgStyle,
+                      },
+                      [
+                        (isRepeat || i % 5 === 0) &&
+                          h("path", { d: wavePath, style: pathStyle }),
+                      ],
+                    ),
+                  ),
+                ]),
+            ],
+          ),
+      ],
     );
   },
 }) as DefineComponent<WaveProps>;
