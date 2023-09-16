@@ -20,6 +20,7 @@ export type WaveProps = {
   marqueeSpeed?: number;
   transitionDuration?: number;
   polesSeriesTransformDuration?: number;
+  onPolesChanged?: (poles: PoleParameters[]) => void;
 };
 
 export type WaveExpose = {

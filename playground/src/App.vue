@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import type { PoleParameters } from "./types";
 import { useElementSize } from "@vueuse/core";
-import WavePath from "./components/WavePath.vue";
+import { VueSurf } from "vue-surf";
 
 const sectionRef = ref<HTMLElement | null>(null);
 const { width } = useElementSize(sectionRef);
 
-const set: PoleParameters[][] = [
+const set = [
   [
     [0, 100],
     [300, 0],
@@ -29,7 +28,7 @@ const set: PoleParameters[][] = [
 <template>
   <section class="section1"></section>
 
-  <WavePath
+  <VueSurf
     :width="width"
     color="white"
     :poles="set[0]"

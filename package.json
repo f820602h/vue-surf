@@ -1,27 +1,50 @@
 {
-  "name": "vue-wave",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "vue-surf",
+  "description": "A very customizable animated wave component for Vue 3.",
+  "private": false,
+  "version": "0.1.1",
+  "license": "MIT",
+  "keywords": [
+    "vue",
+    "animation",
+    "wave",
+    "svg"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc && vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext .vue,.js,.ts,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+    "build": "pkgroll",
+    "dev": "pkgroll --watch",
+    "lint": "eslint .",
+    "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@vueuse/core": "^10.4.1",
-    "sass": "^1.66.1",
     "vue": "^3.3.4"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.1.0",
+    "@types/node": "^20.6.1",
     "@vitejs/plugin-vue": "^4.2.3",
+    "@vitejs/plugin-vue-jsx": "^3.0.2",
     "@vue/eslint-config-prettier": "^8.0.0",
     "@vue/eslint-config-typescript": "^11.0.3",
     "eslint": "^8.49.0",
     "eslint-plugin-vue": "^9.17.0",
+    "pkgroll": "^1.11.0",
     "prettier": "^3.0.3",
+    "sass": "^1.66.1",
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
     "vue-tsc": "^1.8.5"

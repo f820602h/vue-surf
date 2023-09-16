@@ -1,4 +1,4 @@
-import { Ref, ref } from "vue";
+import { type Ref, ref } from "vue";
 
 export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
   function standardize(number: number): number {
