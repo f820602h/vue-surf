@@ -1,31 +1,30 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useElementSize } from "@vueuse/core";
-import { VueSurf, type WaveExpose } from "vue-surf";
-import { StarportCarrier } from "vue-starport";
+import { VueSurf, type WaveExpose } from "../../dist/index";
 
 const sectionRef = ref(null);
 const vueSurfRef = ref<WaveExpose | null>(null);
-const { width } = useElementSize(sectionRef);
+
+const marquee = ref(false);
 </script>
 
 <template>
-  <StarportCarrier />
   <VueSurf
     ref="vueSurfRef"
-    :width="width"
+    width="800px"
     :apexes="[
       [0, 50],
       [100, 0],
       [100, 50],
     ]"
     side="top"
-    :marquee-speed="-5"
+    :marquee="marquee"
+    :marquee-speed="10"
   />
   <section
     ref="sectionRef"
-    @mouseenter="vueSurfRef?.pauseMarquee()"
-    @mouseleave="vueSurfRef?.playMarquee()"
+    @mouseenter="vueSurfRef?.resumeMarquee()"
+    @mouseleave="vueSurfRef?.pauseMarquee()"
   ></section>
 </template>
 

@@ -76,11 +76,36 @@ export const VueSurf = defineComponent({
     },
   },
   setup(props) {
+    const waveEl = ref<HTMLElement | null>(null);
+    const { width: waveElWidth } = useElementSize(waveEl);
+
+    const {
+      startMarquee,
+      stopMarquee,
+      resumeMarquee,
+      pauseMarquee,
+      resetMarqueeSpeed,
+    } = useMarquee(waveEl, props.marqueeSpeed);
+    watch(
+      () => waveElWidth.value && props.marquee,
+      (val) => {
+        if (!val) nextTick(() => stopMarquee());
+        else nextTick(() => startMarquee());
+      },
+      { immediate: true },
+    );
+    watch(
+      () => props.marqueeSpeed,
+      (val) => {
+        resetMarqueeSpeed(val);
+      },
+    );
+
     const fps = useFps();
     const timestamp = ref(0);
     const {
       pause: pauseApexesSeriesTransform,
-      resume: playApexesSeriesTransform,
+      resume: resumeApexesSeriesTransform,
     } = useRafFn(({ delta }) => {
       if (delta > fps.value * 3) return;
       timestamp.value += delta;
@@ -89,13 +114,13 @@ export const VueSurf = defineComponent({
     onBeforeMount(() => {
       pauseApexesSeriesTransform();
       if (props.apexesSeries && props.apexesSeries.length > 0) {
-        playApexesSeriesTransform();
+        resumeApexesSeriesTransform();
       }
     });
     watch(
       () => props.apexesSeries,
       (val) => {
-        if (val && val.length > 0) playApexesSeriesTransform();
+        if (val && val.length > 0) resumeApexesSeriesTransform();
         else pauseApexesSeriesTransform();
       },
     );
@@ -119,31 +144,6 @@ export const VueSurf = defineComponent({
         throw new Error("[Vue Wave] No apexes provided");
       }
     });
-
-    const waveEl = ref<HTMLElement | null>(null);
-    const { width: waveElWidth } = useElementSize(waveEl);
-
-    const {
-      startMarquee,
-      playMarquee,
-      pauseMarquee,
-      stopMarquee,
-      resetMarqueeSpeed,
-    } = useMarquee(waveEl, props.marqueeSpeed);
-    watch(
-      () => waveElWidth.value && props.marquee,
-      (val) => {
-        if (!val) nextTick(() => stopMarquee());
-        else nextTick(() => startMarquee());
-      },
-      { immediate: true },
-    );
-    watch(
-      () => props.marqueeSpeed,
-      (val) => {
-        resetMarqueeSpeed(val);
-      },
-    );
 
     const smoothRatio = computed<number>(() => {
       if (typeof props.smooth === "number") {
@@ -349,9 +349,9 @@ export const VueSurf = defineComponent({
     });
 
     const exposedProps: WaveExpose = {
-      playMarquee,
+      resumeMarquee,
       pauseMarquee,
-      playApexesSeriesTransform,
+      resumeApexesSeriesTransform,
       pauseApexesSeriesTransform,
     };
 

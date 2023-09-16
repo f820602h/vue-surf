@@ -25,8 +25,8 @@ export type WaveProps = {
 };
 
 export type WaveExpose = {
-  playMarquee: () => void;
+  resumeMarquee: () => void;
   pauseMarquee: () => void;
-  playApexesSeriesTransform: () => void;
+  resumeApexesSeriesTransform: () => void;
   pauseApexesSeriesTransform: () => void;
 };

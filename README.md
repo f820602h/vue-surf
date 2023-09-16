@@ -323,20 +323,20 @@ const vueSurf = ref(null)
 
 ```typescript
 type WaveExpose = {
-  playMarquee: () => void;
   pauseMarquee: () => void;
-  playApexesSeriesTransform: () => void;
+  resumeMarquee: () => void;
   pauseApexesSeriesTransform: () => void;
+  resumeApexesSeriesTransform: () => void;
 };
 ```
 
 ### pauseMarquee
-Gradually pause the marquee animation. If you wish to pause immediately, you can toggle the `marquee` to `false`.
+Gradually pause the marquee animation. This function becomes ineffective when `marquee` is set to `false`.
 
 <br/>
 
-### playMarquee
-Gradually resume the marquee animation. If you wish to play immediately, you can toggle the `marquee` to `true`.
+### resumeMarquee
+Gradually resume the marquee animation. This function becomes ineffective when `marquee` is set to `false`.
 
 <br/>
 
@@ -345,7 +345,7 @@ Resume the apexes transformation animation.
 
 <br/>
 
-### playApexesSeriesTransform
+### resumeApexesSeriesTransform
 Resume the apexes transformation animation.
 
 ## License

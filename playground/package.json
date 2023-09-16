@@ -8,8 +8,7 @@
   },
   "dependencies": {
     "vue": "^3.3.4",
-    "vue-starport": "^0.4.0",
-    "vue-surf": "0.1.11"
+    "vue-surf": "0.1.12"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",

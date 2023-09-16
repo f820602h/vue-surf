@@ -10,6 +10,9 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
   const offset = ref<number>(0);
   const isStop = ref<boolean>(false);
 
+  const resumeTimer = ref<number>(0);
+  const pauseTimer = ref<number>(0);
+
   function step(): void {
     if (isStop.value) return;
     if (!elementRef.value) {
@@ -28,15 +31,20 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
   }
 
   function startMarquee(): void {
+    window.clearInterval(resumeTimer.value);
+    window.clearInterval(pauseTimer.value);
     isStop.value = false;
     currentSpeed.value = initSpeed.value;
     reqFrame.value = window.requestAnimationFrame(step);
   }
 
   function stopMarquee(): void {
+    window.clearInterval(resumeTimer.value);
+    window.clearInterval(pauseTimer.value);
+    window.cancelAnimationFrame(reqFrame.value);
     isStop.value = true;
     currentSpeed.value = 0;
-    window.cancelAnimationFrame(reqFrame.value);
+    reqFrame.value = 0;
   }
 
   function resetMarqueeSpeed(speed: number) {
@@ -44,33 +52,52 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
     currentSpeed.value = standardize(speed);
   }
 
-  function playMarquee(): void {
-    isStop.value = false;
+  function resumeMarquee(): void {
+    if (isStop.value) return;
+    if (!initSpeed.value) return;
     if (Math.abs(currentSpeed.value) >= Math.abs(initSpeed.value)) return;
-    const step = initSpeed.value / 200;
-    let timer = 0;
+    if (resumeTimer.value) window.clearInterval(resumeTimer.value);
+    if (pauseTimer.value) window.clearInterval(pauseTimer.value);
 
-    timer = window.setInterval(() => {
-      if (Math.abs(currentSpeed.value) >= 25) window.clearInterval(timer);
-      currentSpeed.value += step;
-    }, 1);
+    const stepSpeed = initSpeed.value < 0 ? -0.1 : 0.1;
+
+    resumeTimer.value = window.setInterval(() => {
+      if (Math.abs(currentSpeed.value) >= Math.abs(initSpeed.value)) {
+        currentSpeed.value = initSpeed.value;
+        window.clearInterval(resumeTimer.value);
+      } else currentSpeed.value = standardize(currentSpeed.value + stepSpeed);
+    }, 10);
   }
 
   function pauseMarquee(): void {
-    if (Math.abs(currentSpeed.value) <= 0) isStop.value = true;
-    const step = initSpeed.value / 200;
-    let timer = 0;
+    if (isStop.value) return;
+    if (!initSpeed.value) return;
+    if (
+      (initSpeed.value > 0 && currentSpeed.value <= 0) ||
+      (initSpeed.value < 0 && currentSpeed.value >= 0)
+    ) {
+      return;
+    }
+    if (resumeTimer.value) window.clearInterval(resumeTimer.value);
+    if (pauseTimer.value) window.clearInterval(pauseTimer.value);
 
-    timer = window.setInterval(() => {
-      if (Math.abs(currentSpeed.value) <= 0) window.clearInterval(timer);
-      currentSpeed.value -= step;
-    }, 1);
+    const stepSpeed = initSpeed.value < 0 ? -0.1 : 0.1;
+
+    pauseTimer.value = window.setInterval(() => {
+      if (
+        (initSpeed.value > 0 && currentSpeed.value <= 0) ||
+        (initSpeed.value < 0 && currentSpeed.value >= 0)
+      ) {
+        currentSpeed.value = 0;
+        window.clearInterval(pauseTimer.value);
+      } else currentSpeed.value = standardize(currentSpeed.value - stepSpeed);
+    }, 10);
   }
 
   return {
     startMarquee,
     resetMarqueeSpeed,
-    playMarquee,
+    resumeMarquee,
     pauseMarquee,
     stopMarquee,
   };
