@@ -106,6 +106,8 @@ apexes: {
 
 Configuring the primary parameters of the wave involves an array composed of multiple parameter sets describing the `distance` and `height` of the apexes.
 
+  <img src="./graphs/apex.png" alt="apex" width="100%">
+
 Here, the term `distance` refers to the length of separation from the **previous apex**. And `height` denotes the vertical distance of the apex from the reference plane used for calculation.
 
 Both `distance` and `height`, similar to `width`, accept direct `number` values representing pixels or `string` with `px` or `%` units.
