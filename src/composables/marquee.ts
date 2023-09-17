@@ -15,13 +15,8 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
 
   function step(): void {
     if (isStop.value) return;
-    if (!elementRef.value) {
-      throw new Error("[Vue Wave] Element not found");
-    }
-    if (!(elementRef.value.children[0] instanceof HTMLElement)) {
-      console.log(elementRef.value);
-      throw new Error("[Vue Wave] Element is not HTMLElement");
-    }
+    if (!elementRef.value) return;
+    if (!(elementRef.value.children[0] instanceof HTMLElement)) return;
 
     const element = elementRef.value.children[0];
     element.style.marginLeft = `calc(-200% + ${offset.value}px)`;

@@ -19,6 +19,9 @@ import {
   toRef,
 } from "vue";
 import {
+  errorText,
+  lengthValidator,
+  apexesValidator,
   getLengthPixelNumber,
   getLengthPercentNumber,
   average,
@@ -32,22 +35,41 @@ export const VueSurf = defineComponent({
     width: {
       type: [Number, String],
       default: "100%",
+      validator: lengthValidator,
     },
     shape: {
       type: String as () => WaveShape,
       default: WaveShape.WAVY,
+      validator: (val: WaveShape) => {
+        const isValid = Object.values(WaveShape).includes(val);
+        if (!isValid) throw new Error(errorText.shape);
+        return Object.values(WaveShape).includes(val);
+      },
     },
     apexes: {
       type: Array as () => ApexParameters[],
       default: undefined,
+      validator: apexesValidator,
     },
     apexesSeries: {
       type: Array as () => ApexParameters[][],
       default: undefined,
+      validator: (val: ApexParameters[][]) => {
+        if (!val) return true;
+        if (!Array.isArray(val) || (Array.isArray(val) && val.length === 0)) {
+          throw new Error(errorText.apexesSeriesFormat);
+        }
+        return val.every((apexes) => apexesValidator(apexes));
+      },
     },
     side: {
       type: String as () => WaveSide,
       default: WaveSide.TOP,
+      validator: (val: WaveSide) => {
+        const isValid = Object.values(WaveSide).includes(val);
+        if (!isValid) throw new Error(errorText.side);
+        return Object.values(WaveSide).includes(val);
+      },
     },
     color: {
       type: String,
@@ -152,7 +174,7 @@ export const VueSurf = defineComponent({
       } else if (props.apexes) {
         return props.apexes;
       } else {
-        throw new Error("[Vue Wave] No apexes provided");
+        throw new Error(errorText.apexesNotProvide);
       }
     });
 
@@ -200,14 +222,14 @@ export const VueSurf = defineComponent({
             getLengthPixelNumber(apex[0], waveElWidth.value),
             getLengthPixelNumber(apex[1], waveElWidth.value),
           ];
-        } else if ("height" in apex) {
+        } else if ("distance" in apex && "height" in apex) {
           return [
             getLengthPixelNumber(apex.distance, waveElWidth.value),
             getLengthPixelNumber(apex.height, waveElWidth.value),
           ];
         } else {
           throw new Error(
-            `[Vue Wave] Invalid apex format ${JSON.stringify(apex)}`,
+            `[Vue Surf] Invalid apex format ${JSON.stringify(apex)}`,
           );
         }
       });
@@ -366,7 +388,7 @@ export const VueSurf = defineComponent({
       () => currentApexes.value,
       async (newVal, oldVal) => {
         if (oldVal && newVal.length !== oldVal.length) {
-          console.warn("Apexes length changed, animation may be broke.");
+          console.warn(errorText.apexesLengthChanged);
         }
         props.onApexesChanged?.(newVal, props.shape);
       },
