@@ -8,9 +8,26 @@ export type ApexParametersTuple = [
 ];
 export type ApexParameters = ApexParametersObject | ApexParametersTuple;
 
+export enum WaveShape {
+  WAVY = "wavy",
+  SERRATED = "serrated",
+  PETAL = "petal",
+}
+
+export enum WaveSide {
+  TOP = "top",
+  BOTTOM = "bottom",
+}
+
+export type ApexesChangedCallback = (
+  currentApexes: ApexParameters[],
+  currentShape: WaveShape,
+) => void;
+
 export type WaveProps = {
   width?: number | string;
-  side?: "top" | "bottom";
+  shape?: WaveShape;
+  side?: WaveSide;
   apexes?: ApexParameters[];
   apexesSeries?: ApexParameters[][];
   color?: string;
@@ -21,7 +38,7 @@ export type WaveProps = {
   marqueeSpeed?: number;
   transitionDuration?: number;
   apexesSeriesTransformDuration?: number;
-  onApexesChanged?: (currentApexes: ApexParameters[]) => void;
+  onApexesChanged?: ApexesChangedCallback;
 };
 
 export type WaveExpose = {

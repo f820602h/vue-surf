@@ -1,4 +1,11 @@
-import type { WaveProps, WaveExpose, ApexParameters } from "../types";
+import {
+  WaveProps,
+  WaveExpose,
+  ApexParameters,
+  WaveShape,
+  WaveSide,
+  ApexesChangedCallback,
+} from "../types";
 import type { DefineComponent, PropType, StyleValue } from "vue";
 import {
   ref,
@@ -26,6 +33,10 @@ export const VueSurf = defineComponent({
       type: [Number, String],
       default: "100%",
     },
+    shape: {
+      type: String as () => WaveShape,
+      default: WaveShape.WAVY,
+    },
     apexes: {
       type: Array as () => ApexParameters[],
       default: undefined,
@@ -35,8 +46,8 @@ export const VueSurf = defineComponent({
       default: undefined,
     },
     side: {
-      type: String as () => "top" | "bottom",
-      default: "top",
+      type: String as () => WaveSide,
+      default: WaveSide.TOP,
     },
     color: {
       type: String,
@@ -71,7 +82,7 @@ export const VueSurf = defineComponent({
       default: undefined,
     },
     onApexesChanged: {
-      type: Function as PropType<(currentApexes: ApexParameters[]) => void>,
+      type: Function as PropType<ApexesChangedCallback>,
       default: undefined,
     },
   },
@@ -183,20 +194,20 @@ export const VueSurf = defineComponent({
 
     function getApexesPixelNumberArray(apexes: ApexParameters[]): number[][] {
       const processedApexes = closureApexes(apexes);
-      return processedApexes.map((pole) => {
-        if (Array.isArray(pole)) {
+      return processedApexes.map((apex) => {
+        if (Array.isArray(apex)) {
           return [
-            getLengthPixelNumber(pole[0], waveElWidth.value),
-            getLengthPixelNumber(pole[1], waveElWidth.value),
+            getLengthPixelNumber(apex[0], waveElWidth.value),
+            getLengthPixelNumber(apex[1], waveElWidth.value),
           ];
-        } else if ("height" in pole) {
+        } else if ("height" in apex) {
           return [
-            getLengthPixelNumber(pole.distance, waveElWidth.value),
-            getLengthPixelNumber(pole.height, waveElWidth.value),
+            getLengthPixelNumber(apex.distance, waveElWidth.value),
+            getLengthPixelNumber(apex.height, waveElWidth.value),
           ];
         } else {
           throw new Error(
-            `[Vue Wave] Invalid pole format ${JSON.stringify(pole)}`,
+            `[Vue Wave] Invalid apex format ${JSON.stringify(apex)}`,
           );
         }
       });
@@ -210,8 +221,12 @@ export const VueSurf = defineComponent({
       return getApexesPixelNumberArray(apexes).reduce((acc, [d]) => acc + d, 0);
     }
 
-    function getHeight(h: number) {
-      return props.side === "bottom" ? h : waveHeight.value - h;
+    function getHeightPercent(h: number) {
+      const height = props.side === "bottom" ? h : waveHeight.value - h;
+      return getLengthPercentNumber(height, waveHeight.value);
+    }
+    function getDistancePercent(d: number) {
+      return getLengthPercentNumber(d, waveLength.value);
     }
 
     function getWavePath(apexes: ApexParameters[]): string {
@@ -221,50 +236,106 @@ export const VueSurf = defineComponent({
       let path = "";
 
       path += apexesPixelNumberArray.reduce((acc, [d, h], index, arr) => {
-        const avgDistanceBetweenPrev = average(d, 0);
-        const controlPointDistance = sumDistance + avgDistanceBetweenPrev;
-        const poleSvgY = getHeight(h);
-        const poleSvgYPercent = getLengthPercentNumber(
-          poleSvgY,
-          waveHeight.value,
-        );
+        const halfBetweenPrev = average(d, 0);
+        const apexSvgXPercent = getDistancePercent(sumDistance + d);
+        const apexSvgYPercent = getHeightPercent(h);
 
         if (index === 0) {
-          return (acc += `${poleSvgYPercent}`);
+          return (acc += `${apexSvgYPercent}`);
         } else {
-          const prevApexSvgY = getHeight(arr[index - 1][1]);
-          const prevApexSvgYPercent = getLengthPercentNumber(
-            prevApexSvgY,
-            waveHeight.value,
-          );
+          const prevApexSvgXPercent = getDistancePercent(sumDistance);
+          const prevApexSvgYPercent = getHeightPercent(arr[index - 1][1]);
 
           let smoothness = 0;
           if (index !== arr.length - 1 && index !== 1) {
-            const avgDistanceBetweenNext = average(arr[index + 1][0], 0);
+            const halfBetweenNext = average(arr[index + 1][0], 0);
 
-            const prev = avgDistanceBetweenPrev;
-            const next = avgDistanceBetweenNext;
+            const prev = halfBetweenPrev;
+            const next = halfBetweenNext;
             if (prev < next) {
               const ratio = (prev + next) / next;
               smoothness = props.smooth ? ratio * prev * smoothRatio.value : 0;
             }
           }
 
-          const firstControlPoint = `${getLengthPercentNumber(
-            controlPointDistance + smoothness,
-            waveLength.value,
-          )} ${prevApexSvgYPercent}`;
-          const secondControlPoint = `${getLengthPercentNumber(
-            controlPointDistance - smoothness,
-            waveLength.value,
-          )} ${poleSvgYPercent}`;
+          const middleBetweenPrevSvgX = sumDistance + halfBetweenPrev;
+
+          let firstControlPointX;
+          switch (props.shape) {
+            case WaveShape.WAVY:
+              firstControlPointX = getDistancePercent(
+                middleBetweenPrevSvgX + smoothness,
+              );
+              break;
+            case WaveShape.SERRATED:
+              firstControlPointX = prevApexSvgXPercent;
+              break;
+
+            case WaveShape.PETAL:
+              firstControlPointX =
+                h < arr[index - 1][1] ? apexSvgXPercent : prevApexSvgXPercent;
+              break;
+            default:
+              firstControlPointX = getDistancePercent(
+                middleBetweenPrevSvgX + smoothness,
+              );
+          }
+
+          let firstControlPointY;
+          switch (props.shape) {
+            case WaveShape.WAVY:
+              firstControlPointY = prevApexSvgYPercent;
+              break;
+            case WaveShape.SERRATED:
+              firstControlPointY = prevApexSvgYPercent;
+              break;
+            case WaveShape.PETAL:
+              firstControlPointY =
+                h < arr[index - 1][1] ? prevApexSvgYPercent : apexSvgYPercent;
+              break;
+            default:
+              firstControlPointY = prevApexSvgYPercent;
+          }
+
+          let secondControlPointX;
+          switch (props.shape) {
+            case WaveShape.WAVY:
+              secondControlPointX = getDistancePercent(
+                middleBetweenPrevSvgX - smoothness,
+              );
+              break;
+            case WaveShape.SERRATED:
+              secondControlPointX = apexSvgXPercent;
+              break;
+            case WaveShape.PETAL:
+              secondControlPointX = apexSvgXPercent;
+              break;
+            default:
+              secondControlPointX = getDistancePercent(
+                middleBetweenPrevSvgX - smoothness,
+              );
+          }
+
+          let secondControlPointY;
+          switch (props.shape) {
+            case WaveShape.WAVY:
+              secondControlPointY = apexSvgYPercent;
+              break;
+            case WaveShape.SERRATED:
+              secondControlPointY = apexSvgYPercent;
+              break;
+            case WaveShape.PETAL:
+              secondControlPointY = apexSvgYPercent;
+              break;
+            default:
+              secondControlPointY = apexSvgYPercent;
+          }
+
+          const firstControlPoint = `${firstControlPointX} ${firstControlPointY}`;
+          const secondControlPoint = `${secondControlPointX} ${secondControlPointY}`;
+          const end = `${apexSvgXPercent} ${apexSvgYPercent}`;
 
           sumDistance += d;
-
-          const end = `${getLengthPercentNumber(
-            sumDistance,
-            waveLength.value,
-          )} ${poleSvgYPercent}`;
 
           return (acc += ` C${firstControlPoint}, ${secondControlPoint}, ${end}`);
         }
@@ -297,7 +368,7 @@ export const VueSurf = defineComponent({
         if (oldVal && newVal.length !== oldVal.length) {
           console.warn("Apexes length changed, animation may be broke.");
         }
-        props.onApexesChanged?.(newVal);
+        props.onApexesChanged?.(newVal, props.shape);
       },
     );
 

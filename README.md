@@ -64,6 +64,28 @@ Configuring the fill color of the wave, it accepts any standard color format.
 
 <br/>
 
+### shape
+```typescript
+enum WaveShape {
+  WAVY = "wavy",
+  SERRATED = "serrated",
+  PETAL = "petal",
+}
+
+shape: {
+  type: String as () => WaveShape,
+  default: WaveShape.WAVY,
+}
+```
+In addition to the regular wave pattern, VueSurf also offer options for a serrated and a petal-like pattern for you to choose from.
+
+<p align="center" float="left">
+  <img src="./graphs/serrated.png" alt="serrated" width="45%">
+  <img src="./graphs/petal.png" alt="petal" width="45%">
+</p>
+
+<br/>
+
 ### apexes
 ```typescript
 export type ApexParametersObject = {
@@ -126,9 +148,14 @@ const apexesSeries = ref([
 
 ### side
 ```typescript
+enum WaveSide {
+  TOP = "top",
+  BOTTOM = "bottom",
+}
+
 side: {
-  type: String as () => "top" | "bottom",
-  default: "top",
+  type: String as () => WaveSide,
+  default: WaveSide.TOP,
 }
 ```
 The determination of whether the wave faces upwards or downwards also dictates whether the height of the apexes is measured from the top or the bottom.
@@ -292,8 +319,13 @@ To achieve a seamless animation effect, when no value is specified, it defaults 
 
 ### onApexesChanged
 ```typescript
+type ApexesChangedCallback = (
+  currentApexes: ApexParameters[],
+  currentShape: WaveShape,
+) => void;
+
 onApexesChanged: {
-  type: Function as PropType<(currentApexes: ApexParameters[]) => void>,
+  type: Function as ApexesChangedCallback,
   default: undefined,
 }
 ```
