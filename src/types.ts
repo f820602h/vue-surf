@@ -8,6 +8,20 @@ export type ApexParametersTuple = [
 ];
 export type ApexParameters = ApexParametersObject | ApexParametersTuple;
 
+export type ApexesChangedCallback = (
+  currentApexes: ApexParameters[],
+  currentShape: WaveShape,
+) => void;
+
+export type LinearGradientColor = {
+  rotate?: number;
+  colorSteps: {
+    offset: number;
+    color: string;
+    opacity?: number;
+  }[];
+};
+
 export enum WaveShape {
   WAVY = "wavy",
   SERRATED = "serrated",
@@ -18,11 +32,6 @@ export enum WaveSide {
   TOP = "top",
   BOTTOM = "bottom",
 }
-
-export type ApexesChangedCallback = (
-  currentApexes: ApexParameters[],
-  currentShape: WaveShape,
-) => void;
 
 export type WaveProps = {
   width?: number | string;

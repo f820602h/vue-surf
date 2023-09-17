@@ -1,4 +1,4 @@
-import { ApexParameters } from "./types";
+import { ApexParameters, LinearGradientColor } from "./types";
 
 const pixelRegex = /(\d+)px/;
 const percentRegex = /(\d+)%/;
@@ -9,11 +9,16 @@ export const errorText = {
     "[Vue Surf] length must be a positive number or string with unit 'px' or '%'",
   apexFormat:
     "[Vue Surf] apex must be an array of [distance, height] or {distance: number, height: number}",
-  apexesFormat: "[Vue Surf] apexes must be an not empty array",
-  apexesSeriesFormat: "[Vue Surf] apexesSeries must be an not empty array",
+  apexesFormat: "[Vue Surf] apexes must be a not empty array",
+  apexesSeriesFormat: "[Vue Surf] apexesSeries must be a not empty array",
   apexesNotProvide: "[Vue Surf] please provide apexes or apexesSeries",
   apexesLengthChanged:
     "[Vue Surf] Apexes length changed, animation may be broken",
+  colorFormat: "[Vue Surf] color must be a string or object",
+  colorRotateFormat: "[Vue Surf] color.rotate must be a number",
+  ColorStepsFormat:
+    "[Vue Surf] color.colorSteps must be a not empty array of {offset: number, color: string, opacity?: number}",
+  colorStepOpacityFormat: "[Vue Surf] colorStep.opacity must be a number",
   shape: "[Vue Surf] shape must be one of 'wavy', 'serrated', 'petal'",
   side: "[Vue Surf] side must be one of 'top', 'bottom'",
 };
@@ -46,6 +51,36 @@ export function apexesValidator(val: ApexParameters[]) {
       throw new Error(errorText.apexFormat);
     }
   });
+}
+
+export function colorValidator(val: string | LinearGradientColor) {
+  if (!val) return true;
+  if (typeof val === "string") return true;
+  if (typeof val === "object") {
+    if ("rotate" in val && typeof val.rotate !== "number") {
+      throw new Error(errorText.colorRotateFormat);
+    }
+    if (
+      !Array.isArray(val.colorSteps) ||
+      (Array.isArray(val.colorSteps) && val.colorSteps.length === 0)
+    ) {
+      throw new Error(errorText.colorStepOpacityFormat);
+    }
+
+    return val.colorSteps.every((colorStep) => {
+      if ("opacity" in colorStep && typeof colorStep.opacity !== "number") {
+        throw new Error(errorText.colorStepOpacityFormat);
+      }
+      if (!("offset" in colorStep) || !("color" in colorStep)) {
+        throw new Error(errorText.colorStepOpacityFormat);
+      }
+      return (
+        typeof colorStep.offset === "number" &&
+        typeof colorStep.color === "string"
+      );
+    });
+  }
+  throw new Error(errorText.colorFormat);
 }
 
 export function getLengthPixelNumber(

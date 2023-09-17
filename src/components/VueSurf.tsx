@@ -4,6 +4,7 @@ import {
   ApexParameters,
   WaveShape,
   WaveSide,
+  LinearGradientColor,
   ApexesChangedCallback,
 } from "../types";
 import type { DefineComponent, PropType, StyleValue } from "vue";
@@ -72,7 +73,7 @@ export const VueSurf = defineComponent({
       },
     },
     color: {
-      type: String,
+      type: [String, Object] as PropType<string | LinearGradientColor>,
       default: "white",
     },
     repeat: {
@@ -186,6 +187,11 @@ export const VueSurf = defineComponent({
       } else {
         return 0;
       }
+    });
+
+    const pathColor = computed<string>(() => {
+      if (typeof props.color === "string") return props.color;
+      return "url(#gradient)";
     });
 
     function closureApexes(apexes: ApexParameters[]) {
@@ -390,7 +396,7 @@ export const VueSurf = defineComponent({
         if (oldVal && newVal.length !== oldVal.length) {
           console.warn(errorText.apexesLengthChanged);
         }
-        props.onApexesChanged?.(newVal, props.shape);
+        props.onApexesChanged?.([...newVal], props.shape);
       },
     );
 
@@ -436,7 +442,7 @@ export const VueSurf = defineComponent({
 
     const pathStyle = computed(() => {
       return {
-        fill: props.color,
+        fill: pathColor.value,
         transition: `${props.transitionDuration}ms linear`,
       };
     });
@@ -460,6 +466,7 @@ export const VueSurf = defineComponent({
       repeatWrapperStyle,
       svgStyle,
       pathStyle,
+      colorProp: props.color,
       ...exposedProps,
     };
   },
@@ -473,6 +480,7 @@ export const VueSurf = defineComponent({
       repeatWrapperStyle,
       svgStyle,
       pathStyle,
+      colorProp,
     } = this;
 
     return h(
@@ -497,6 +505,32 @@ export const VueSurf = defineComponent({
                         style: svgStyle,
                       },
                       [
+                        typeof colorProp !== "string" &&
+                          h("defs", [
+                            h(
+                              "linearGradient",
+                              {
+                                id: "gradient",
+                                gradientTransform: `rotate(${
+                                  colorProp.rotate || 0
+                                })`,
+                              },
+                              [
+                                colorProp.colorSteps.length > 0 &&
+                                  Array.from(colorProp.colorSteps).map(
+                                    (colorStep) => {
+                                      return h("stop", {
+                                        offset: colorStep.offset,
+                                        style: {
+                                          stopColor: colorStep.color,
+                                          stopOpacity: colorStep.opacity,
+                                        },
+                                      });
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ]),
                         (isRepeat || i % 5 === 0) &&
                           h("path", { d: wavePath, style: pathStyle }),
                       ],

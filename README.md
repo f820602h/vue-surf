@@ -55,12 +55,35 @@ The width of the wave, accept direct `number` values representing pixels or `str
 
 ### color
 ```typescript
+type LinearGradientColor = {
+  rotate?: number;
+  colorSteps: {
+    offset: number;
+    color: string;
+  }[];
+}
+
 color: {
-  type: String,
+  type: [String, Object] as PropType<string | LinearGradientColor>,
   default: "white",
 }
 ```
-Configuring the fill color of the wave, it accepts any standard color format.
+Configuring the fill color of the wave, it accept standard monochrome `string` or utilize a specific object format to configure linear gradients.
+
+```typescript
+const color = reactive({
+  rotate: 90,
+  colorSteps: [
+    { offset: 0, color: '#FEAC5E', opacity: 0.3 },
+    { offset: 0.5, color: '#C779D0' },
+    { offset: 1, color: '#4BC0C8' },
+  ],
+})
+```
+
+<img src="./graphs/linear-gradients.png" alt="apexes-series" width="100%">
+
+> Radial gradients are currently not supported
 
 <br/>
 
