@@ -19,11 +19,11 @@ export const errorText = {
 };
 
 export function lengthValidator(val: number | string) {
-  if (typeof val === "number" && val <= 0) {
+  if (typeof val === "number" && val < 0) {
     throw new Error(errorText.lengthPositive);
   }
   if (typeof val === "string") {
-    if (!pixelRegex.test(val) || !percentRegex.test(val)) {
+    if (!pixelRegex.test(val) && !percentRegex.test(val)) {
       throw new Error(errorText.lengthFormat);
     } else if (parseInt(val) <= 0) {
       throw new Error(errorText.lengthPositive);
