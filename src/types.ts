@@ -14,8 +14,9 @@ export type ApexesChangedCallback = (
 ) => void;
 
 export type LinearGradientColor = {
+  name: string;
   rotate?: number;
-  colorSteps: {
+  steps: {
     offset: number;
     color: string;
     opacity?: number;

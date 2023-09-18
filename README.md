@@ -56,10 +56,12 @@ The width of the wave, accept direct `number` values representing pixels or `str
 ### color
 ```typescript
 type LinearGradientColor = {
+  name: string;
   rotate?: number;
-  colorSteps: {
+  steps: {
     offset: number;
     color: string;
+    opacity?: number
   }[];
 }
 
@@ -72,8 +74,9 @@ Configuring the fill color of the wave, it accept standard monochrome `string` o
 
 ```typescript
 const color = reactive({
+  name: "myGradient" // name must be specified
   rotate: 90,
-  colorSteps: [
+  steps: [
     { offset: 0, color: '#FEAC5E', opacity: 0.3 },
     { offset: 0.5, color: '#C779D0' },
     { offset: 1, color: '#4BC0C8' },

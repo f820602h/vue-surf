@@ -13,13 +13,26 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
   const resumeTimer = ref<number>(0);
   const pauseTimer = ref<number>(0);
 
+  const translateX = ref<number>(0);
+  function getTranslateX(element: HTMLElement): number {
+    const transform = window.getComputedStyle(element).transform;
+    if (transform === "none") return 0;
+    const matrix = transform.match(/^matrix\((.+)\)$/);
+    if (!matrix) return 0;
+    const matrixValues = matrix[1].split(", ");
+    return Number(matrixValues[4]);
+  }
+
   function step(): void {
     if (isStop.value) return;
     if (!elementRef.value) return;
     if (!(elementRef.value.children[0] instanceof HTMLElement)) return;
 
     const element = elementRef.value.children[0];
-    element.style.marginLeft = `calc(-200% + ${offset.value}px)`;
+    if (!translateX.value) translateX.value = getTranslateX(element);
+    element.style.transform = `translateX(calc(${
+      translateX.value + offset.value
+    }px))`;
     if (Math.abs(offset.value) > element.clientWidth / 5) offset.value = 0;
     offset.value = offset.value + currentSpeed.value;
     window.requestAnimationFrame(step);

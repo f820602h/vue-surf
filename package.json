@@ -2,7 +2,7 @@
   "name": "vue-surf",
   "description": "Very customized animated svg wave Vue component",
   "private": false,
-  "version": "0.4.1",
+  "version": "0.4.2",
   "author": "max.lee <f820602h7@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/f820602h/vue-surf#readme",
@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@vueuse/core": "^10.4.1",
+    "uuidv4": "^6.2.13",
     "vue": "^3.3.4"
   },
   "devDependencies": {

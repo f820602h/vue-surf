@@ -13,11 +13,9 @@ import {
   computed,
   watch,
   nextTick,
-  onBeforeMount,
   defineComponent,
   TransitionGroup,
   h,
-  toRef,
 } from "vue";
 import {
   errorText,
@@ -120,6 +118,7 @@ export const VueSurf = defineComponent({
       pauseMarquee,
       resetMarqueeSpeed,
     } = useMarquee(waveEl, props.marqueeSpeed);
+    watch(() => props.marqueeSpeed, resetMarqueeSpeed);
     watch(
       () => waveElWidth.value && props.marquee,
       (val) => {
@@ -127,12 +126,6 @@ export const VueSurf = defineComponent({
         else nextTick(() => startMarquee());
       },
       { immediate: true },
-    );
-    watch(
-      () => props.marqueeSpeed,
-      (val) => {
-        resetMarqueeSpeed(val);
-      },
     );
 
     const fps = useFps();
@@ -144,30 +137,17 @@ export const VueSurf = defineComponent({
       if (delta > fps.value * 3) return;
       timestamp.value += delta;
     });
-
-    onBeforeMount(() => {
-      pauseApexesSeriesTransform();
-      if (props.apexesSeries && props.apexesSeries.length > 0) {
-        resumeApexesSeriesTransform();
-      }
-    });
-    watch(
-      () => props.apexesSeries,
-      (val) => {
-        if (val && val.length > 0) resumeApexesSeriesTransform();
-        else pauseApexesSeriesTransform();
-      },
-    );
-
     const duration = computed<number>(() => {
-      return props.apexesSeriesTransformDuration || props.transitionDuration;
+      return (
+        props.apexesSeriesTransformDuration || props.transitionDuration || 500
+      );
     });
     const counter = computed<number>(() => {
       return Math.floor(timestamp.value / duration.value);
     });
     const apexesSeriesIndex = computed<number>(() => {
       if (!props.apexesSeries) return 0;
-      return (2 + counter.value) % props.apexesSeries.length;
+      return counter.value % props.apexesSeries.length;
     });
     const currentApexes = computed<ApexParameters[]>(() => {
       if (props.apexesSeries && props.apexesSeries.length > 0) {
@@ -179,6 +159,26 @@ export const VueSurf = defineComponent({
       }
     });
 
+    watch(
+      () => props.apexesSeries,
+      (val) => {
+        if (val && val.length > 0) {
+          resumeApexesSeriesTransform();
+          timestamp.value += duration.value * 0.9;
+        } else pauseApexesSeriesTransform();
+      },
+      { immediate: true },
+    );
+    watch(
+      () => currentApexes.value,
+      async (newVal, oldVal) => {
+        if (oldVal && newVal.length !== oldVal.length) {
+          console.warn(errorText.apexesLengthChanged);
+        }
+        props.onApexesChanged?.([...newVal], props.shape);
+      },
+    );
+
     const smoothRatio = computed<number>(() => {
       if (typeof props.smooth === "number") {
         return props.smooth > 1 ? 1 : props.smooth < 0 ? 0 : props.smooth;
@@ -189,14 +189,9 @@ export const VueSurf = defineComponent({
       }
     });
 
-    const pathColor = computed<string>(() => {
-      if (typeof props.color === "string") return props.color;
-      return "url(#gradient)";
-    });
-
-    function closureApexes(apexes: ApexParameters[]) {
-      if (!props.closure) return apexes;
-      const resultApexes = [...apexes];
+    const closureApexes = computed<ApexParameters[]>(() => {
+      if (!props.closure) return currentApexes.value;
+      const resultApexes = [...currentApexes.value];
       const firstApex = resultApexes[0];
       const lastApex = resultApexes[resultApexes.length - 1];
 
@@ -218,11 +213,10 @@ export const VueSurf = defineComponent({
       ];
 
       return resultApexes;
-    }
+    });
 
-    function getApexesPixelNumberArray(apexes: ApexParameters[]): number[][] {
-      const processedApexes = closureApexes(apexes);
-      return processedApexes.map((apex) => {
+    const apexesPixelNumberArray = computed<number[][]>(() => {
+      return closureApexes.value.map((apex) => {
         if (Array.isArray(apex)) {
           return [
             getLengthPixelNumber(apex[0], waveElWidth.value),
@@ -239,31 +233,36 @@ export const VueSurf = defineComponent({
           );
         }
       });
-    }
+    });
 
-    function getHightestApexHeight(apexes: ApexParameters[]): number {
-      return Math.max(...getApexesPixelNumberArray(apexes).map(([, h]) => h));
-    }
+    const waveHeight = computed<number>(() => {
+      return Math.max(...apexesPixelNumberArray.value.map(([, h]) => h));
+    });
 
-    function getApexDistanceSum(apexes: ApexParameters[]): number {
-      return getApexesPixelNumberArray(apexes).reduce((acc, [d]) => acc + d, 0);
-    }
+    const waveLength = computed<number>(() => {
+      return apexesPixelNumberArray.value.reduce((acc, [d]) => acc + d, 0);
+    });
+
+    const repeatTimes = computed<number>(() => {
+      if (!waveElWidth.value) return 0;
+      return Math.ceil(waveElWidth.value / waveLength.value);
+    });
 
     function getHeightPercent(h: number) {
       const height = props.side === "bottom" ? h : waveHeight.value - h;
       return getLengthPercentNumber(height, waveHeight.value);
     }
+
     function getDistancePercent(d: number) {
       return getLengthPercentNumber(d, waveLength.value);
     }
 
-    function getWavePath(apexes: ApexParameters[]): string {
-      const apexesPixelNumberArray = getApexesPixelNumberArray(apexes);
+    const wavePath = computed<string>(() => {
       const origin = props.side === "bottom" ? "-0.1" : "100.1";
       let sumDistance = 0;
       let path = "";
 
-      path += apexesPixelNumberArray.reduce((acc, [d, h], index, arr) => {
+      path += apexesPixelNumberArray.value.reduce((acc, [d, h], index, arr) => {
         const halfBetweenPrev = average(d, 0);
         const apexSvgXPercent = getDistancePercent(sumDistance + d);
         const apexSvgYPercent = getHeightPercent(h);
@@ -370,73 +369,56 @@ export const VueSurf = defineComponent({
       }, "");
 
       return `M0 ${origin} L0 ${path} L100 ${origin}Z`;
-    }
-
-    const waveHeight = computed<number>(() => {
-      return getHightestApexHeight(currentApexes.value);
     });
 
-    const waveLength = computed<number>(() => {
-      return getApexDistanceSum(currentApexes.value);
+    const pathColor = computed<string>(() => {
+      if (typeof props.color === "string") return props.color;
+      return `url(#gradient-${props.color.name})`;
     });
-
-    const isRepeat = toRef(props, "repeat");
-    const repeatTimes = computed<number>(() => {
-      if (!waveElWidth.value) return 0;
-      return Math.ceil(waveElWidth.value / waveLength.value);
+    const alignItems = computed<string>(() => {
+      return props.side === "bottom" ? "flex-start" : "flex-end";
     });
-
-    const wavePath = computed<string>(() => {
-      return getWavePath(currentApexes.value);
+    const transition = computed<string>(() => {
+      if (!props.transitionDuration) return "";
+      return `width ${props.transitionDuration}ms linear, height ${props.transitionDuration}ms linear, margin ${props.transitionDuration}ms linear`;
     });
-
-    watch(
-      () => currentApexes.value,
-      async (newVal, oldVal) => {
-        if (oldVal && newVal.length !== oldVal.length) {
-          console.warn(errorText.apexesLengthChanged);
-        }
-        props.onApexesChanged?.([...newVal], props.shape);
-      },
-    );
 
     const containerStyle = computed<StyleValue>(() => {
-      const width =
-        typeof props.width === "number" ? `${props.width}px` : props.width;
+      const height = `${waveHeight.value}px`;
       return {
-        width,
-        height: `${waveHeight.value}px`,
-        marginBottom:
-          props.side === "bottom" ? `-${waveHeight.value}px` : "0px",
-        marginTop: props.side === "top" ? `-${waveHeight.value}px` : "0px",
-        transition: `height ${props.transitionDuration}ms linear, margin ${props.transitionDuration}ms linear`,
         position: "relative",
         display: "flex",
-        alignItems: props.side === "bottom" ? "flex-start" : "flex-end",
+        alignItems: alignItems.value,
+        width: props.width + typeof props.width === "number" ? "px" : "",
+        height,
+        marginTop: props.side === "top" ? `-${height}` : "0px",
+        marginBottom: props.side === "bottom" ? `-${height}` : "0px",
+        transition: transition.value,
         overflow: "hidden",
       };
     });
 
     const repeatWrapperStyle = computed<StyleValue>(() => {
+      const totalWaveLength = waveLength.value * repeatTimes.value;
       return {
-        width: `${waveLength.value * repeatTimes.value * 5}px`,
-        maxWidth: `${waveLength.value * repeatTimes.value * 5}px`,
-        transition: `height ${props.transitionDuration}ms linear, width ${props.transitionDuration}ms linear`,
-        position: "relative",
-        flexShrink: 0,
         display: "flex",
-        alignItems: props.side === "bottom" ? "flex-start" : "flex-end",
+        alignItems: alignItems.value,
+        flexShrink: 0,
+        width: `${totalWaveLength * 5}px`,
+        maxWidth: `${totalWaveLength * 5}px`,
         height: "100%",
+        transform: props.marquee ? `translateX(-${totalWaveLength * 2}px)` : "",
+        transition: transition.value,
         overflow: "hidden",
       };
     });
 
     const svgStyle = computed(() => {
       return {
+        flexShrink: 0,
         width: `${waveLength.value}px`,
         height: `${waveHeight.value}px`,
-        transition: `height ${props.transitionDuration}ms linear, width ${props.transitionDuration}ms linear`,
-        flexShrink: 0,
+        transition: transition.value,
       };
     });
 
@@ -457,9 +439,7 @@ export const VueSurf = defineComponent({
     return {
       waveEl,
       waveElWidth,
-      waveHeight,
-      waveLength,
-      isRepeat,
+      isRepeat: props.repeat,
       repeatTimes,
       wavePath,
       containerStyle,
@@ -487,7 +467,7 @@ export const VueSurf = defineComponent({
       "div",
       { ref: "waveEl", class: "vue-wave", style: containerStyle },
       [
-        waveElWidth &&
+        !!waveElWidth &&
           h(
             "div",
             { class: "vue-wave__repeat-wrapper", style: repeatWrapperStyle },
@@ -510,14 +490,14 @@ export const VueSurf = defineComponent({
                             h(
                               "linearGradient",
                               {
-                                id: "gradient",
+                                id: `gradient-${colorProp.name}`,
                                 gradientTransform: `rotate(${
                                   colorProp.rotate || 0
                                 })`,
                               },
                               [
-                                colorProp.colorSteps.length > 0 &&
-                                  Array.from(colorProp.colorSteps).map(
+                                colorProp.steps.length > 0 &&
+                                  Array.from(colorProp.steps).map(
                                     (colorStep) => {
                                       return h("stop", {
                                         offset: colorStep.offset,

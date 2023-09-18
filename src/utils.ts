@@ -4,6 +4,8 @@ const pixelRegex = /(\d+)px/;
 const percentRegex = /(\d+)%/;
 
 export const errorText = {
+  parentNoWidth:
+    "[Vue Surf] parent element must have a width when using '%' to set width",
   lengthPositive: "[Vue Surf] please provide a positive length value",
   lengthFormat:
     "[Vue Surf] length must be a positive number or string with unit 'px' or '%'",
@@ -15,9 +17,10 @@ export const errorText = {
   apexesLengthChanged:
     "[Vue Surf] Apexes length changed, animation may be broken",
   colorFormat: "[Vue Surf] color must be a string or object",
+  colorNameFormat: "[Vue Surf] color.name must be a string",
   colorRotateFormat: "[Vue Surf] color.rotate must be a number",
   ColorStepsFormat:
-    "[Vue Surf] color.colorSteps must be a not empty array of {offset: number, color: string, opacity?: number}",
+    "[Vue Surf] color.steps must be a not empty array of {offset: number, color: string, opacity?: number}",
   colorStepOpacityFormat: "[Vue Surf] colorStep.opacity must be a number",
   shape: "[Vue Surf] shape must be one of 'wavy', 'serrated', 'petal'",
   side: "[Vue Surf] side must be one of 'top', 'bottom'",
@@ -60,14 +63,17 @@ export function colorValidator(val: string | LinearGradientColor) {
     if ("rotate" in val && typeof val.rotate !== "number") {
       throw new Error(errorText.colorRotateFormat);
     }
+    if (!("name" in val) || typeof val.name !== "string") {
+      throw new Error(errorText.colorNameFormat);
+    }
     if (
-      !Array.isArray(val.colorSteps) ||
-      (Array.isArray(val.colorSteps) && val.colorSteps.length === 0)
+      !Array.isArray(val.steps) ||
+      (Array.isArray(val.steps) && val.steps.length === 0)
     ) {
       throw new Error(errorText.colorStepOpacityFormat);
     }
 
-    return val.colorSteps.every((colorStep) => {
+    return val.steps.every((colorStep) => {
       if ("opacity" in colorStep && typeof colorStep.opacity !== "number") {
         throw new Error(errorText.colorStepOpacityFormat);
       }

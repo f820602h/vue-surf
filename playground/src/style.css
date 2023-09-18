@@ -27,7 +27,11 @@ body {
   margin: 0;
   display: flex;
   justify-content: center;
-  place-items: center;
+  align-items: flex-end;
   min-width: 320px;
   min-height: 100vh;
+}
+
+#app {
+  width: 100vw;
 }
