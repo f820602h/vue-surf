@@ -1,14 +1,20 @@
 <br>
 <br>
-<p align="center">
+<p align="center" style="margin-bottom: 0px">
 <img height="100" src="./graphs/logo.svg" alt="Vue Surf">
 </p>
+
+<h1 align="center" style="border: 0px">Vue-Surf</h1>
 
 <p align="center">
 Very customized animated svg wave Vue component
 </p>
 
-<p align="center"><a href="https://www.npmjs.com/package/vue-surf"><img src="https://img.shields.io/npm/v/vue-surf?color=3fb883&amp;label=" alt="NPM version"></a></p>
+<p align="center">
+   <a href="https://www.npmjs.com/package/vue-surf"><img src="https://img.shields.io/npm/v/vue-surf.svg?style=flat&colorA=18181B&colorB=28CF8D" alt="Version"></a>
+    <a href="https://github.com/f820602h/vue-surf/blob/master/LICENSE"><img src="https://img.shields.io/npm/l/vue-surf.svg" alt="License"></a>
+</a>
+</p>
 
 <br>
 <br>
@@ -21,7 +27,7 @@ npm install vue-surf
 
 ## Usage
 
-Add `<VueSurf>` component from `vue-surf` to your template, and Pass in at least two parameters, `width` and `apexes`, to `<VueSurf>`.
+Add `<VueSurf>` component from `vue-surf` to your template, and Pass in at least two parameters, `width` and `apexes` to `<VueSurf>`.
 
 ```html
 <script setup>
@@ -157,20 +163,30 @@ const apexes = ref([
 ### apexesSeries
 ```typescript
 apexesSeries: {
-  type: Array as () => ApexParameters[][],
+  type: Array as () => (
+    | ApexParameters[]
+    | { apexes: ApexParameters[]; shape?: WaveShape }
+  )[],
   default: undefined,
 }
 ```
 An array comprised of multiple `apexes`, when the length of the array exceeds one, shall automatically initiate a transformation animation across these `apexes`.
 
+Additionally, if you wish to specify the `shape` of a particular set of `apexes` within `apexesSeries`, you can achieve this transformation by passing an object containing `apexes` and `shape`.
+
+
 ```typescript
 const apexesSeries = ref([
   [[0, 50], [100, 0], [100, 50]],
-  [[0, 0], [100, 50], [100, 0]]
+  {
+    apexes: [[0, 0], [100, 50], [100, 0]],
+    shape: "serrated"
+  }
 ])
 ```
-
+<p align="center">
 <img src="./graphs/apexes-series.gif" alt="apexes-series" width="60%">
+</p>
 
 > Please ensure that each `apexes` within the `apexesSeries` possesses an equal length to maintain the effectiveness of the transformation animation."
 
@@ -236,7 +252,9 @@ The decision to automatically repeat is contingent upon whether the cumulative `
   />
 </template>
 ```
+<p align="center">
 <img src="./graphs/repeat.png" alt="repeat" width="60%">
+</p>
 
 <br/>
 
@@ -259,7 +277,9 @@ To facilitate a natural alignment of repeated waves, the height of the last apex
   />
 </template>
 ```
+<p align="center">
 <img src="./graphs/closure.png" alt="closure" width="60%">
+</p>
 
 <br/>
 
@@ -310,7 +330,9 @@ marquee: {
 ```
 When you use <VueSurf>, the marquee animation effect will automatically activate. You can set it to `false` to deactivate the animation.
 
+<p align="center">
 <img src="./graphs/marquee.gif" alt="marquee" width="60%">
+</p>
 
 <br/>
 
@@ -343,7 +365,7 @@ apexesSeriesTransformDuration: {
   default: undefined,
 }
 ```
-To achieve a seamless animation effect, when no value is specified, it defaults to being the same as `transitionDuration`.
+To achieve a seamless animation effect, when no value is specified, it defaults to being the same as `transitionDuration`. However, if `transitionDuration` is set to 0, `apexesSeriesTransformDuration` will automatically be set to 500.
 
 <br/>
 

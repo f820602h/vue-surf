@@ -16,6 +16,8 @@ import {
   defineComponent,
   TransitionGroup,
   h,
+  onBeforeMount,
+  onBeforeUnmount,
 } from "vue";
 import {
   errorText,
@@ -40,6 +42,7 @@ export const VueSurf = defineComponent({
       type: String as () => WaveShape,
       default: WaveShape.WAVY,
       validator: (val: WaveShape) => {
+        if (!val) return true;
         const isValid = Object.values(WaveShape).includes(val);
         if (!isValid) throw new Error(errorText.shape);
         return Object.values(WaveShape).includes(val);
@@ -51,20 +54,40 @@ export const VueSurf = defineComponent({
       validator: apexesValidator,
     },
     apexesSeries: {
-      type: Array as () => ApexParameters[][],
+      type: Array as () => (
+        | ApexParameters[]
+        | { apexes: ApexParameters[]; shape?: WaveShape }
+      )[],
       default: undefined,
-      validator: (val: ApexParameters[][]) => {
+      validator: (
+        val: (
+          | ApexParameters[]
+          | { apexes: ApexParameters[]; shape?: WaveShape }
+        )[],
+      ) => {
         if (!val) return true;
         if (!Array.isArray(val) || (Array.isArray(val) && val.length === 0)) {
           throw new Error(errorText.apexesSeriesFormat);
         }
-        return val.every((apexes) => apexesValidator(apexes));
+        return val.every((apexes) => {
+          if (Array.isArray(apexes)) {
+            return apexesValidator(apexes);
+          } else if ("apexes" in apexes) {
+            if ("shape" in apexes && !!apexes.shape) {
+              const isValid = Object.values(WaveShape).includes(apexes.shape);
+              if (!isValid) throw new Error(errorText.shape);
+            }
+            return apexesValidator(apexes.apexes);
+          }
+          return false;
+        });
       },
     },
     side: {
       type: String as () => WaveSide,
       default: WaveSide.TOP,
       validator: (val: WaveSide) => {
+        if (!val) return true;
         const isValid = Object.values(WaveSide).includes(val);
         if (!isValid) throw new Error(errorText.side);
         return Object.values(WaveSide).includes(val);
@@ -149,20 +172,29 @@ export const VueSurf = defineComponent({
       if (!props.apexesSeries) return 0;
       return counter.value % props.apexesSeries.length;
     });
+    const currentShape = computed<WaveShape>(() => {
+      if (props.apexesSeries && props.apexesSeries.length > 0) {
+        const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
+        if ("shape" in apexesSeries) {
+          return apexesSeries.shape || props.shape || WaveShape.WAVY;
+        }
+      }
+      return props.shape || WaveShape.WAVY;
+    });
     const currentApexes = computed<ApexParameters[]>(() => {
       if (props.apexesSeries && props.apexesSeries.length > 0) {
-        return props.apexesSeries[apexesSeriesIndex.value];
-      } else if (props.apexes) {
-        return props.apexes;
-      } else {
-        throw new Error(errorText.apexesNotProvide);
-      }
+        const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
+        if (Array.isArray(apexesSeries)) return apexesSeries;
+        else if ("apexes" in apexesSeries) return apexesSeries.apexes;
+        throw new Error(errorText.apexesSeriesFormat);
+      } else if (props.apexes) return props.apexes;
+      throw new Error(errorText.apexesNotProvide);
     });
 
     watch(
       () => props.apexesSeries,
       (val) => {
-        if (val && val.length > 0) {
+        if (val) {
           resumeApexesSeriesTransform();
           timestamp.value += duration.value * 0.9;
         } else pauseApexesSeriesTransform();
@@ -175,9 +207,36 @@ export const VueSurf = defineComponent({
         if (oldVal && newVal.length !== oldVal.length) {
           console.warn(errorText.apexesLengthChanged);
         }
-        props.onApexesChanged?.([...newVal], props.shape);
+        props.onApexesChanged?.([...newVal], currentShape.value);
       },
     );
+
+    const isTransition = ref<boolean>(true);
+    function debounce(func: () => void) {
+      let timer = 0;
+      return function () {
+        if (timer) clearTimeout(timer);
+        timer = window.setTimeout(func, 100);
+      };
+    }
+
+    function transitionToggle() {
+      pauseApexesSeriesTransform();
+      stopMarquee();
+      isTransition.value = false;
+      resetTransition();
+    }
+    const resetTransition = debounce(() => {
+      isTransition.value = true;
+      if (props.marquee) startMarquee();
+      if (props.apexesSeries) resumeApexesSeriesTransform();
+    });
+    onBeforeMount(() => {
+      window.addEventListener("resize", transitionToggle);
+    });
+    onBeforeUnmount(() => {
+      window.removeEventListener("resize", transitionToggle);
+    });
 
     const smoothRatio = computed<number>(() => {
       if (typeof props.smooth === "number") {
@@ -259,6 +318,7 @@ export const VueSurf = defineComponent({
 
     const wavePath = computed<string>(() => {
       const origin = props.side === "bottom" ? "-0.1" : "100.1";
+
       let sumDistance = 0;
       let path = "";
 
@@ -288,7 +348,7 @@ export const VueSurf = defineComponent({
           const middleBetweenPrevSvgX = sumDistance + halfBetweenPrev;
 
           let firstControlPointX;
-          switch (props.shape) {
+          switch (currentShape.value) {
             case WaveShape.WAVY:
               firstControlPointX = getDistancePercent(
                 middleBetweenPrevSvgX + smoothness,
@@ -309,7 +369,7 @@ export const VueSurf = defineComponent({
           }
 
           let firstControlPointY;
-          switch (props.shape) {
+          switch (currentShape.value) {
             case WaveShape.WAVY:
               firstControlPointY = prevApexSvgYPercent;
               break;
@@ -325,7 +385,7 @@ export const VueSurf = defineComponent({
           }
 
           let secondControlPointX;
-          switch (props.shape) {
+          switch (currentShape.value) {
             case WaveShape.WAVY:
               secondControlPointX = getDistancePercent(
                 middleBetweenPrevSvgX - smoothness,
@@ -344,7 +404,7 @@ export const VueSurf = defineComponent({
           }
 
           let secondControlPointY;
-          switch (props.shape) {
+          switch (currentShape.value) {
             case WaveShape.WAVY:
               secondControlPointY = apexSvgYPercent;
               break;
@@ -379,7 +439,7 @@ export const VueSurf = defineComponent({
       return props.side === "bottom" ? "flex-start" : "flex-end";
     });
     const transition = computed<string>(() => {
-      if (!props.transitionDuration) return "";
+      if (!props.transitionDuration || !isTransition.value) return "";
       return `width ${props.transitionDuration}ms linear, height ${props.transitionDuration}ms linear, margin ${props.transitionDuration}ms linear`;
     });
 
@@ -407,7 +467,7 @@ export const VueSurf = defineComponent({
         width: `${totalWaveLength * 5}px`,
         maxWidth: `${totalWaveLength * 5}px`,
         height: "100%",
-        transform: props.marquee ? `translateX(-${totalWaveLength * 2}px)` : "",
+        marginLeft: props.marquee ? `-200%` : "",
         transition: transition.value,
         overflow: "hidden",
       };
@@ -425,7 +485,9 @@ export const VueSurf = defineComponent({
     const pathStyle = computed(() => {
       return {
         fill: pathColor.value,
-        transition: `${props.transitionDuration}ms linear`,
+        transition: isTransition.value
+          ? `${props.transitionDuration}ms linear`
+          : "",
       };
     });
 

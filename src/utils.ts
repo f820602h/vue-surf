@@ -1,4 +1,4 @@
-import { ApexParameters, LinearGradientColor } from "./types";
+import { ApexParameters, WaveShape, LinearGradientColor } from "./types";
 
 const pixelRegex = /(\d+)px/;
 const percentRegex = /(\d+)%/;
@@ -54,6 +54,13 @@ export function apexesValidator(val: ApexParameters[]) {
       throw new Error(errorText.apexFormat);
     }
   });
+}
+
+export function shapeValidator(val: WaveShape) {
+  if (!val) return true;
+  const isValid = Object.values(WaveShape).includes(val);
+  if (!isValid) throw new Error(errorText.shape);
+  return Object.values(WaveShape).includes(val);
 }
 
 export function colorValidator(val: string | LinearGradientColor) {

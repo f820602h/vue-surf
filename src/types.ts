@@ -39,7 +39,10 @@ export type WaveProps = {
   shape?: WaveShape;
   side?: WaveSide;
   apexes?: ApexParameters[];
-  apexesSeries?: ApexParameters[][];
+  apexesSeries?: (
+    | ApexParameters[]
+    | { apexes: ApexParameters[]; shape?: WaveShape }
+  )[];
   color?: string | LinearGradientColor;
   repeat?: boolean;
   closure?: boolean;
