@@ -39,7 +39,15 @@ import { VueSurf } from "../../src/components/VueSurf";
       :transition-duration="1000"
     />
   </div>
-  <h1>Let's go surfing together!</h1>
+  <div>
+    <div class="links" href="">
+      <a href="">
+        <img class="github" src="./assets/github.svg" alt="github" />
+        <p>Vue Surf</p>
+      </a>
+    </div>
+    <h1>Let's go surfing together!</h1>
+  </div>
   <div>
     <VueSurf
       width="100%"
@@ -128,6 +136,32 @@ import { VueSurf } from "../../src/components/VueSurf";
 h1 {
   text-align: center;
   font-size: 45px;
+  margin-bottom: 20;
+}
+.links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+
+  a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+  }
+
+  p {
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    margin-left: 8px;
+  }
+
+  img {
+    width: 30px;
+    height: 30px;
+  }
 }
 section {
   width: 100%;
