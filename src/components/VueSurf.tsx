@@ -456,7 +456,7 @@ export const VueSurf = defineComponent({
         position: "relative",
         display: "flex",
         alignItems: alignItems.value,
-        width: props.width + typeof props.width === "number" ? "px" : "",
+        width: props.width + (typeof props.width === "number" ? "px" : ""),
         height,
         marginTop: props.side === "top" ? `-${height}` : "0px",
         marginBottom: props.side === "bottom" ? `-${height}` : "0px",
