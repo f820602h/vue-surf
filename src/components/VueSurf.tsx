@@ -473,7 +473,7 @@ export const VueSurf = defineComponent({
       return {
         flexShrink: 0,
         width: `${waveLength.value * repeatTimes.value}px`,
-        height: `${Math.floor(waveHeight.value)}px`,
+        height: `${waveHeight.value}px`,
         transition: transition.value,
       };
     });
