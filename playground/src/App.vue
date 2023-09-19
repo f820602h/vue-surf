@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { VueSurf } from "../../dist/index";
+import { VueSurf } from "vue-surf";
 </script>
 
 <template>
