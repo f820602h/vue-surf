@@ -41,7 +41,7 @@ import { VueSurf } from "../../src/components/VueSurf";
   </div>
   <div>
     <div class="links" href="">
-      <a href="">
+      <a href="https://github.com/f820602h/vue-surf">
         <img class="github" src="./assets/github.svg" alt="github" />
         <p>Vue Surf</p>
       </a>
@@ -136,7 +136,7 @@ import { VueSurf } from "../../src/components/VueSurf";
 h1 {
   text-align: center;
   font-size: 45px;
-  margin-bottom: 20;
+  margin-top: 0;
 }
 .links {
   display: flex;
