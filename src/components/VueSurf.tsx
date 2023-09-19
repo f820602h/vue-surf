@@ -306,16 +306,19 @@ export const VueSurf = defineComponent({
     }
 
     function getDistancePercent(d: number) {
-      return getLengthPercentNumber(d, waveLength.value);
+      return getLengthPercentNumber(d, waveLength.value * repeatTimes.value);
     }
 
     const wavePath = computed<string>(() => {
       const origin = props.side === "bottom" ? "-0.1" : "100.1";
+      const apexes: number[][] = Array.from({ length: repeatTimes.value })
+        .map(() => apexesPixelNumberArray.value)
+        .flat();
 
       let sumDistance = 0;
       let path = "";
 
-      path += apexesPixelNumberArray.value.reduce((acc, [d, h], index, arr) => {
+      path += apexes.reduce((acc, [d, h], index, arr) => {
         const halfBetweenPrev = average(d, 0);
         const apexSvgXPercent = getDistancePercent(sumDistance + d);
         const apexSvgYPercent = getHeightPercent(h);
@@ -469,8 +472,8 @@ export const VueSurf = defineComponent({
     const svgStyle = computed(() => {
       return {
         flexShrink: 0,
-        width: `${waveLength.value}px`,
-        height: `${waveHeight.value}px`,
+        width: `${waveLength.value * repeatTimes.value}px`,
+        height: `${Math.floor(waveHeight.value)}px`,
         transition: transition.value,
       };
     });
@@ -529,7 +532,7 @@ export const VueSurf = defineComponent({
             [
               repeatTimes * 5 > 0 &&
                 h(TransitionGroup, { name: "wave" }, () => [
-                  Array.from({ length: repeatTimes * 5 }).map((_, i) =>
+                  Array.from({ length: 5 }).map((_, i) =>
                     h(
                       "svg",
                       {
