@@ -14,7 +14,6 @@ import {
   watch,
   nextTick,
   defineComponent,
-  TransitionGroup,
   h,
   onBeforeMount,
   onBeforeUnmount,
@@ -279,11 +278,9 @@ export const VueSurf = defineComponent({
             getLengthPixelNumber(apex.distance, waveElWidth.value),
             getLengthPixelNumber(apex.height, waveElWidth.value),
           ];
-        } else {
-          throw new Error(
-            `[Vue Surf] Invalid apex format ${JSON.stringify(apex)}`,
-          );
         }
+        console.warn(errorText.apexesFormat);
+        return [1, 1];
       });
     });
 
@@ -306,12 +303,16 @@ export const VueSurf = defineComponent({
     }
 
     function getDistancePercent(d: number) {
-      return getLengthPercentNumber(d, waveLength.value * repeatTimes.value);
+      return getLengthPercentNumber(
+        d,
+        waveLength.value * repeatTimes.value * 5,
+      );
     }
 
     const wavePath = computed<string>(() => {
       const origin = props.side === "bottom" ? "-0.1" : "100.1";
-      const apexes: number[][] = Array.from({ length: repeatTimes.value })
+      const originLength = apexesPixelNumberArray.value.length;
+      const apexes: number[][] = Array.from({ length: repeatTimes.value * 5 })
         .map(() => apexesPixelNumberArray.value)
         .flat();
 
@@ -319,6 +320,8 @@ export const VueSurf = defineComponent({
       let path = "";
 
       path += apexes.reduce((acc, [d, h], index, arr) => {
+        const isHidden = !props.repeat && index > originLength;
+
         const halfBetweenPrev = average(d, 0);
         const apexSvgXPercent = getDistancePercent(sumDistance + d);
         const apexSvgYPercent = getHeightPercent(h);
@@ -344,79 +347,87 @@ export const VueSurf = defineComponent({
           const middleBetweenPrevSvgX = sumDistance + halfBetweenPrev;
 
           let firstControlPointX;
-          switch (currentShape.value) {
-            case "wavy":
-              firstControlPointX = getDistancePercent(
-                middleBetweenPrevSvgX + smoothness,
-              );
-              break;
-            case "serrated":
-              firstControlPointX = prevApexSvgXPercent;
-              break;
-
-            case "petal":
-              firstControlPointX =
-                h < arr[index - 1][1] ? apexSvgXPercent : prevApexSvgXPercent;
-              break;
-            default:
-              firstControlPointX = getDistancePercent(
-                middleBetweenPrevSvgX + smoothness,
-              );
-          }
-
           let firstControlPointY;
-          switch (currentShape.value) {
-            case "wavy":
-              firstControlPointY = prevApexSvgYPercent;
-              break;
-            case "serrated":
-              firstControlPointY = prevApexSvgYPercent;
-              break;
-            case "petal":
-              firstControlPointY =
-                h < arr[index - 1][1] ? prevApexSvgYPercent : apexSvgYPercent;
-              break;
-            default:
-              firstControlPointY = prevApexSvgYPercent;
-          }
-
           let secondControlPointX;
-          switch (currentShape.value) {
-            case "wavy":
-              secondControlPointX = getDistancePercent(
-                middleBetweenPrevSvgX - smoothness,
-              );
-              break;
-            case "serrated":
-              secondControlPointX = apexSvgXPercent;
-              break;
-            case "petal":
-              secondControlPointX = apexSvgXPercent;
-              break;
-            default:
-              secondControlPointX = getDistancePercent(
-                middleBetweenPrevSvgX - smoothness,
-              );
-          }
-
           let secondControlPointY;
-          switch (currentShape.value) {
-            case "wavy":
-              secondControlPointY = apexSvgYPercent;
-              break;
-            case "serrated":
-              secondControlPointY = apexSvgYPercent;
-              break;
-            case "petal":
-              secondControlPointY = apexSvgYPercent;
-              break;
-            default:
-              secondControlPointY = apexSvgYPercent;
+
+          if (isHidden) {
+            firstControlPointX = prevApexSvgXPercent;
+            firstControlPointY = 0;
+            secondControlPointX = prevApexSvgXPercent;
+            secondControlPointY = 0;
+          } else {
+            switch (currentShape.value) {
+              case "wavy":
+                firstControlPointX = getDistancePercent(
+                  middleBetweenPrevSvgX + smoothness,
+                );
+                break;
+              case "serrated":
+                firstControlPointX = prevApexSvgXPercent;
+                break;
+
+              case "petal":
+                firstControlPointX =
+                  h < arr[index - 1][1] ? apexSvgXPercent : prevApexSvgXPercent;
+                break;
+              default:
+                firstControlPointX = getDistancePercent(
+                  middleBetweenPrevSvgX + smoothness,
+                );
+            }
+
+            switch (currentShape.value) {
+              case "wavy":
+                firstControlPointY = prevApexSvgYPercent;
+                break;
+              case "serrated":
+                firstControlPointY = prevApexSvgYPercent;
+                break;
+              case "petal":
+                firstControlPointY =
+                  h < arr[index - 1][1] ? prevApexSvgYPercent : apexSvgYPercent;
+                break;
+              default:
+                firstControlPointY = prevApexSvgYPercent;
+            }
+
+            switch (currentShape.value) {
+              case "wavy":
+                secondControlPointX = getDistancePercent(
+                  middleBetweenPrevSvgX - smoothness,
+                );
+                break;
+              case "serrated":
+                secondControlPointX = apexSvgXPercent;
+                break;
+              case "petal":
+                secondControlPointX = apexSvgXPercent;
+                break;
+              default:
+                secondControlPointX = getDistancePercent(
+                  middleBetweenPrevSvgX - smoothness,
+                );
+            }
+
+            switch (currentShape.value) {
+              case "wavy":
+                secondControlPointY = apexSvgYPercent;
+                break;
+              case "serrated":
+                secondControlPointY = apexSvgYPercent;
+                break;
+              case "petal":
+                secondControlPointY = apexSvgYPercent;
+                break;
+              default:
+                secondControlPointY = apexSvgYPercent;
+            }
           }
 
           const firstControlPoint = `${firstControlPointX} ${firstControlPointY}`;
           const secondControlPoint = `${secondControlPointX} ${secondControlPointY}`;
-          const end = `${apexSvgXPercent} ${apexSvgYPercent}`;
+          const end = `${apexSvgXPercent} ${isHidden ? 0 : apexSvgYPercent}`;
 
           sumDistance += d;
 
@@ -455,13 +466,13 @@ export const VueSurf = defineComponent({
     });
 
     const repeatWrapperStyle = computed<StyleValue>(() => {
-      const totalWaveLength = waveLength.value * repeatTimes.value;
+      const totalWaveLength = waveLength.value * repeatTimes.value * 5;
       return {
         display: "flex",
         alignItems: alignItems.value,
         flexShrink: 0,
-        width: `${totalWaveLength * 5}px`,
-        maxWidth: `${totalWaveLength * 5}px`,
+        width: `${totalWaveLength}px`,
+        maxWidth: `${totalWaveLength}px`,
         height: "100%",
         marginLeft: props.marquee ? `-200%` : "",
         transition: transition.value,
@@ -472,7 +483,7 @@ export const VueSurf = defineComponent({
     const svgStyle = computed(() => {
       return {
         flexShrink: 0,
-        width: `${waveLength.value * repeatTimes.value}px`,
+        width: `${waveLength.value * repeatTimes.value * 5}px`,
         height: `${waveHeight.value}px`,
         transition: transition.value,
       };
@@ -497,7 +508,6 @@ export const VueSurf = defineComponent({
     return {
       waveEl,
       waveElWidth,
-      isRepeat: props.repeat,
       repeatTimes,
       wavePath,
       containerStyle,
@@ -511,7 +521,6 @@ export const VueSurf = defineComponent({
   render() {
     const {
       waveElWidth,
-      isRepeat,
       repeatTimes,
       wavePath,
       containerStyle,
@@ -531,50 +540,42 @@ export const VueSurf = defineComponent({
             { class: "vue-wave__repeat-wrapper", style: repeatWrapperStyle },
             [
               repeatTimes * 5 > 0 &&
-                h(TransitionGroup, { name: "wave" }, () => [
-                  Array.from({ length: 5 }).map((_, i) =>
-                    h(
-                      "svg",
-                      {
-                        key: i,
-                        xmlns: "http://www.w3.org/2000/svg",
-                        viewBox: "0,0,100,100",
-                        preserveAspectRatio: "none",
-                        style: svgStyle,
-                      },
-                      [
-                        typeof colorProp !== "string" &&
-                          h("defs", [
-                            h(
-                              "linearGradient",
-                              {
-                                id: `gradient-${colorProp.name}`,
-                                gradientTransform: `rotate(${
-                                  colorProp.rotate || 0
-                                })`,
-                              },
-                              [
-                                colorProp.steps.length > 0 &&
-                                  Array.from(colorProp.steps).map(
-                                    (colorStep) => {
-                                      return h("stop", {
-                                        offset: colorStep.offset,
-                                        style: {
-                                          stopColor: colorStep.color,
-                                          stopOpacity: colorStep.opacity,
-                                        },
-                                      });
-                                    },
-                                  ),
-                              ],
-                            ),
-                          ]),
-                        (isRepeat || i % 5 === 0) &&
-                          h("path", { d: wavePath, style: pathStyle }),
-                      ],
-                    ),
-                  ),
-                ]),
+                h(
+                  "svg",
+                  {
+                    xmlns: "http://www.w3.org/2000/svg",
+                    viewBox: "0,0,100,100",
+                    preserveAspectRatio: "none",
+                    style: svgStyle,
+                  },
+                  [
+                    typeof colorProp !== "string" &&
+                      h("defs", [
+                        h(
+                          "linearGradient",
+                          {
+                            id: `gradient-${colorProp.name}`,
+                            gradientTransform: `rotate(${
+                              colorProp.rotate || 0
+                            })`,
+                          },
+                          [
+                            colorProp.steps.length > 0 &&
+                              Array.from(colorProp.steps).map((colorStep) => {
+                                return h("stop", {
+                                  offset: colorStep.offset,
+                                  style: {
+                                    stopColor: colorStep.color,
+                                    stopOpacity: colorStep.opacity,
+                                  },
+                                });
+                              }),
+                          ],
+                        ),
+                      ]),
+                    h("path", { d: wavePath, style: pathStyle }),
+                  ],
+                ),
             ],
           ),
       ],

@@ -17,6 +17,10 @@ export const errorText = {
   apexFormat:
     "[Vue Surf] apex must be an array of [distance, height] or {distance: number, height: number}",
   apexesFormat: "[Vue Surf] apexes must be a not empty array",
+  apexesHeightZero:
+    "[Vue Surf] at least one apex height must be greater than 0",
+  apexesLengthZero:
+    "[Vue Surf] at least one apex length must be greater than 0",
   apexesSeriesFormat: "[Vue Surf] apexesSeries must be a not empty array",
   apexesNotProvide: "[Vue Surf] please provide apexes or apexesSeries",
   apexesLengthChanged:
@@ -50,15 +54,38 @@ export function apexesValidator(val: ApexParameters[]): boolean {
   if (!Array.isArray(val) || (Array.isArray(val) && val.length === 0)) {
     throw new Error(errorText.apexesFormat);
   }
-  return val.every((apex) => {
+
+  const isValidFormat = val.every((apex) => {
     if (Array.isArray(apex) && apex.length === 2) {
       return lengthValidator(apex[0]) && lengthValidator(apex[1]);
     } else if ("distance" in apex && "height" in apex) {
       return lengthValidator(apex.distance) && lengthValidator(apex.height);
     } else {
+      throw new Error(errorText.apexesLengthZero);
+    }
+  });
+
+  const atLeastOneDistanceNotZero = val.some((apex) => {
+    if (Array.isArray(apex) && apex.length === 2) {
+      return parseInt(apex[0] + "") > 0;
+    } else if ("distance" in apex) {
+      return parseInt(apex.distance + "") > 0;
+    } else {
+      throw new Error(errorText.apexesHeightZero);
+    }
+  });
+
+  const atLeastOneHeightNotZero = val.some((apex) => {
+    if (Array.isArray(apex) && apex.length === 2) {
+      return parseInt(apex[1] + "") > 0;
+    } else if ("height" in apex) {
+      return parseInt(apex.height + "") > 0;
+    } else {
       throw new Error(errorText.apexFormat);
     }
   });
+
+  return isValidFormat && atLeastOneDistanceNotZero && atLeastOneHeightNotZero;
 }
 
 export function shapeValidator(val: string): val is WaveShape {
