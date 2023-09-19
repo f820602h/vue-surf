@@ -20,6 +20,11 @@ Very customized animated svg wave Vue component
 </p>
 
 <br>
+
+<p align="center" style="margin-bottom: 0px">
+<img height="100%" src="./graphs/cover.png" alt="Vue Surf">
+</p>
+
 <br>
 
 ## Install
