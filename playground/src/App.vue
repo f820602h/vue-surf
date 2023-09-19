@@ -137,7 +137,7 @@ import { VueSurf } from "../../src/components/VueSurf";
 h1 {
   text-align: center;
   font-size: 45px;
-  margin-top: 12px;
+  margin: 12px 0 0 0;
   line-height: 1;
 }
 .links {
