@@ -11,9 +11,12 @@ Very customized animated svg wave Vue component
 </p>
 
 <p align="center">
-   <a href="https://www.npmjs.com/package/vue-surf"><img src="https://img.shields.io/npm/v/vue-surf.svg?style=flat&colorA=18181B&colorB=28CF8D" alt="Version"></a>
-    <a href="https://github.com/f820602h/vue-surf/blob/master/LICENSE"><img src="https://img.shields.io/npm/l/vue-surf.svg" alt="License"></a>
-</a>
+  <a href="https://www.npmjs.com/package/vue-surf"><img src="https://img.shields.io/npm/v/vue-surf.svg?style=flat&colorA=18181B&colorB=28CF8D" alt="Version"></a>
+  <a href="https://github.com/f820602h/vue-surf/blob/master/LICENSE"><img src="https://img.shields.io/npm/l/vue-surf.svg" alt="License"></a>
+</p>
+
+<p align="center">
+  <a href="https://f820602h.github.io/vue-surf/">Demo</a>
 </p>
 
 <br>
@@ -176,7 +179,7 @@ const apexesSeries = ref([
   [[0, 50], [100, 0], [100, 50]],
   {
     apexes: [[0, 0], [100, 50], [100, 0]],
-    shape: "serrated"
+    shape: "wavy"
   }
 ])
 ```
@@ -376,6 +379,8 @@ onApexesChanged: {
 ```
 A callback function that is invoked when there is an update to the apexes.
 
+<br>
+
 ## Exposed Methods
 
 ```html
@@ -410,20 +415,17 @@ type WaveExpose = {
 ### pauseMarquee
 Gradually pause the marquee animation. This function becomes ineffective when `marquee` is set to `false`.
 
-<br/>
-
 ### resumeMarquee
 Gradually resume the marquee animation. This function becomes ineffective when `marquee` is set to `false`.
 
-<br/>
-
 ### pauseApexesSeriesTransform
-Resume the apexes transformation animation.
-
-<br/>
+Pause the apexes transformation animation.
 
 ### resumeApexesSeriesTransform
 Resume the apexes transformation animation.
+
+
+<br>
 
 ## License
 
