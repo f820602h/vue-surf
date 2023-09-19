@@ -6,4 +6,5 @@
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true
   },
+  "include": ["*/*.ts", "*/**/*.ts"],
 }
