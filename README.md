@@ -100,15 +100,11 @@ const color = reactive({
 
 ### shape
 ```typescript
-enum WaveShape {
-  WAVY = "wavy",
-  SERRATED = "serrated",
-  PETAL = "petal",
-}
+type WaveShape = "wavy" | "serrated" | "petal";
 
 shape: {
   type: String as () => WaveShape,
-  default: WaveShape.WAVY,
+  default: "wavy",
 }
 ```
 In addition to the regular wave pattern, VueSurf also offer options for a serrated and a petal-like pattern for you to choose from.
@@ -194,14 +190,11 @@ const apexesSeries = ref([
 
 ### side
 ```typescript
-enum WaveSide {
-  TOP = "top",
-  BOTTOM = "bottom",
-}
+type WaveSide = "top" | "bottom";
 
 side: {
   type: String as () => WaveSide,
-  default: WaveSide.TOP,
+  default: "top",
 }
 ```
 The determination of whether the wave faces upwards or downwards also dictates whether the height of the apexes is measured from the top or the bottom.

@@ -23,6 +23,9 @@ import {
   errorText,
   lengthValidator,
   apexesValidator,
+  shapeValidator,
+  sideValidator,
+  colorValidator,
   getLengthPixelNumber,
   getLengthPercentNumber,
   average,
@@ -40,13 +43,8 @@ export const VueSurf = defineComponent({
     },
     shape: {
       type: String as () => WaveShape,
-      default: WaveShape.WAVY,
-      validator: (val: WaveShape) => {
-        if (!val) return true;
-        const isValid = Object.values(WaveShape).includes(val);
-        if (!isValid) throw new Error(errorText.shape);
-        return Object.values(WaveShape).includes(val);
-      },
+      default: "wavy",
+      validator: shapeValidator,
     },
     apexes: {
       type: Array as () => ApexParameters[],
@@ -74,8 +72,7 @@ export const VueSurf = defineComponent({
             return apexesValidator(apexes);
           } else if ("apexes" in apexes) {
             if ("shape" in apexes && !!apexes.shape) {
-              const isValid = Object.values(WaveShape).includes(apexes.shape);
-              if (!isValid) throw new Error(errorText.shape);
+              return shapeValidator(apexes.shape);
             }
             return apexesValidator(apexes.apexes);
           }
@@ -85,17 +82,13 @@ export const VueSurf = defineComponent({
     },
     side: {
       type: String as () => WaveSide,
-      default: WaveSide.TOP,
-      validator: (val: WaveSide) => {
-        if (!val) return true;
-        const isValid = Object.values(WaveSide).includes(val);
-        if (!isValid) throw new Error(errorText.side);
-        return Object.values(WaveSide).includes(val);
-      },
+      default: "top",
+      validator: sideValidator,
     },
     color: {
       type: [String, Object] as PropType<string | LinearGradientColor>,
       default: "white",
+      validator: colorValidator,
     },
     repeat: {
       type: Boolean,
@@ -176,10 +169,10 @@ export const VueSurf = defineComponent({
       if (props.apexesSeries && props.apexesSeries.length > 0) {
         const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
         if ("shape" in apexesSeries) {
-          return apexesSeries.shape || props.shape || WaveShape.WAVY;
+          return apexesSeries.shape || props.shape || "wavy";
         }
       }
-      return props.shape || WaveShape.WAVY;
+      return props.shape || "wavy";
     });
     const currentApexes = computed<ApexParameters[]>(() => {
       if (props.apexesSeries && props.apexesSeries.length > 0) {
@@ -349,16 +342,16 @@ export const VueSurf = defineComponent({
 
           let firstControlPointX;
           switch (currentShape.value) {
-            case WaveShape.WAVY:
+            case "wavy":
               firstControlPointX = getDistancePercent(
                 middleBetweenPrevSvgX + smoothness,
               );
               break;
-            case WaveShape.SERRATED:
+            case "serrated":
               firstControlPointX = prevApexSvgXPercent;
               break;
 
-            case WaveShape.PETAL:
+            case "petal":
               firstControlPointX =
                 h < arr[index - 1][1] ? apexSvgXPercent : prevApexSvgXPercent;
               break;
@@ -370,13 +363,13 @@ export const VueSurf = defineComponent({
 
           let firstControlPointY;
           switch (currentShape.value) {
-            case WaveShape.WAVY:
+            case "wavy":
               firstControlPointY = prevApexSvgYPercent;
               break;
-            case WaveShape.SERRATED:
+            case "serrated":
               firstControlPointY = prevApexSvgYPercent;
               break;
-            case WaveShape.PETAL:
+            case "petal":
               firstControlPointY =
                 h < arr[index - 1][1] ? prevApexSvgYPercent : apexSvgYPercent;
               break;
@@ -386,15 +379,15 @@ export const VueSurf = defineComponent({
 
           let secondControlPointX;
           switch (currentShape.value) {
-            case WaveShape.WAVY:
+            case "wavy":
               secondControlPointX = getDistancePercent(
                 middleBetweenPrevSvgX - smoothness,
               );
               break;
-            case WaveShape.SERRATED:
+            case "serrated":
               secondControlPointX = apexSvgXPercent;
               break;
-            case WaveShape.PETAL:
+            case "petal":
               secondControlPointX = apexSvgXPercent;
               break;
             default:
@@ -405,13 +398,13 @@ export const VueSurf = defineComponent({
 
           let secondControlPointY;
           switch (currentShape.value) {
-            case WaveShape.WAVY:
+            case "wavy":
               secondControlPointY = apexSvgYPercent;
               break;
-            case WaveShape.SERRATED:
+            case "serrated":
               secondControlPointY = apexSvgYPercent;
               break;
-            case WaveShape.PETAL:
+            case "petal":
               secondControlPointY = apexSvgYPercent;
               break;
             default:

@@ -1,4 +1,9 @@
-import { ApexParameters, WaveShape, LinearGradientColor } from "./types";
+import {
+  ApexParameters,
+  WaveShape,
+  WaveSide,
+  LinearGradientColor,
+} from "./types";
 
 const pixelRegex = /(\d+)px/;
 const percentRegex = /(\d+)%/;
@@ -26,7 +31,7 @@ export const errorText = {
   side: "[Vue Surf] side must be one of 'top', 'bottom'",
 };
 
-export function lengthValidator(val: number | string) {
+export function lengthValidator(val: number | string): boolean {
   if (typeof val === "number" && val < 0) {
     throw new Error(errorText.lengthPositive);
   }
@@ -40,7 +45,7 @@ export function lengthValidator(val: number | string) {
   return true;
 }
 
-export function apexesValidator(val: ApexParameters[]) {
+export function apexesValidator(val: ApexParameters[]): boolean {
   if (!val) return true;
   if (!Array.isArray(val) || (Array.isArray(val) && val.length === 0)) {
     throw new Error(errorText.apexesFormat);
@@ -56,14 +61,19 @@ export function apexesValidator(val: ApexParameters[]) {
   });
 }
 
-export function shapeValidator(val: WaveShape) {
+export function shapeValidator(val: string): val is WaveShape {
+  const waveShape: string[] = ["wavy", "serrated", "petal"];
   if (!val) return true;
-  const isValid = Object.values(WaveShape).includes(val);
-  if (!isValid) throw new Error(errorText.shape);
-  return Object.values(WaveShape).includes(val);
+  return waveShape.indexOf(val) !== -1;
 }
 
-export function colorValidator(val: string | LinearGradientColor) {
+export function sideValidator(val: string): val is WaveSide {
+  if (!val) return true;
+  const waveSide: string[] = ["top", "bottom"];
+  return waveSide.indexOf(val) !== -1;
+}
+
+export function colorValidator(val: string | LinearGradientColor): boolean {
   if (!val) return true;
   if (typeof val === "string") return true;
   if (typeof val === "object") {

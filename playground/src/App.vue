@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { VueSurf, type WaveShape, type WaveSide } from "vue-surf";
+import { VueSurf } from "../../src/components/VueSurf";
 </script>
 
 <template>
@@ -18,7 +18,7 @@ import { VueSurf, type WaveShape, type WaveSide } from "vue-surf";
             [50, 0],
             [50, 50],
           ],
-          shape: WaveShape.SERRATED,
+          shape: 'serrated',
         },
         [
           [0, 50],
@@ -31,11 +31,11 @@ import { VueSurf, type WaveShape, type WaveSide } from "vue-surf";
             [50, 0],
             [50, 50],
           ],
-          shape: WaveShape.PETAL,
+          shape: 'petal',
         },
       ]"
       :color="'#4F709C'"
-      :side="WaveSide.BOTTOM"
+      :side="'bottom'"
       :transition-duration="1000"
     />
   </div>
