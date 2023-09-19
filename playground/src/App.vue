@@ -76,6 +76,7 @@ import { VueSurf } from "../../src/components/VueSurf";
           { offset: 1, color: '#1A2980' },
         ],
       }"
+      :smooth="false"
       :transition-duration="1500"
     />
     <VueSurf
