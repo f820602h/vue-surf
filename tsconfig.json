@@ -12,7 +12,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "declaration": true,
-    "jsx": "preserve",
 
     /* Linting */
     "strict": true,
@@ -20,7 +19,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "src/components/VueSurf.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "src/components/VueSurf.ts"],
   "exclude": [ "dist", "playground"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -13,16 +13,27 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
   const resumeTimer = ref<number>(0);
   const pauseTimer = ref<number>(0);
 
-  function step(): void {
-    if (isStop.value) return;
-    if (!elementRef.value) return;
-    if (!(elementRef.value.children[0] instanceof HTMLElement)) return;
+  const fps = 60;
+  const interval = 1000 / fps;
+  let then = 0;
+  function draw(timestamp: number): void {
+    requestAnimationFrame(draw);
 
-    const element = elementRef.value.children[0];
-    element.style.transform = `translateX(${offset.value}px)`;
-    if (Math.abs(offset.value) > element.clientWidth / 5) offset.value = 0;
-    offset.value = offset.value + currentSpeed.value;
-    window.requestAnimationFrame(step);
+    if (then === undefined) then = timestamp;
+    const delta = timestamp - then;
+
+    if (delta > interval) {
+      then = timestamp - (delta % interval);
+
+      if (isStop.value) return;
+      if (!elementRef.value) return;
+      if (!(elementRef.value.children[0] instanceof HTMLElement)) return;
+
+      const element = elementRef.value.children[0];
+      element.style.transform = `translateX(${offset.value}px)`;
+      if (Math.abs(offset.value) > element.clientWidth / 5) offset.value = 0;
+      offset.value = offset.value + currentSpeed.value;
+    }
   }
 
   function startMarquee(): void {
@@ -30,7 +41,7 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
     window.clearInterval(pauseTimer.value);
     isStop.value = false;
     currentSpeed.value = initSpeed.value;
-    reqFrame.value = window.requestAnimationFrame(step);
+    reqFrame.value = requestAnimationFrame(draw);
   }
 
   function stopMarquee(): void {

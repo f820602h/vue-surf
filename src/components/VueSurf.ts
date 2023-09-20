@@ -12,7 +12,6 @@ import {
   ref,
   computed,
   watch,
-  nextTick,
   defineComponent,
   h,
   onBeforeMount,
@@ -30,7 +29,8 @@ import {
   average,
 } from "../utils";
 import { useMarquee } from "../composables/marquee";
-import { useFps, useRafFn, useElementSize } from "@vueuse/core";
+import { useTransformation } from "../composables/transformation";
+import { useElementSize } from "@vueuse/core";
 
 export const VueSurf = defineComponent({
   name: "VueSurf",
@@ -137,21 +137,18 @@ export const VueSurf = defineComponent({
     watch(
       () => waveElWidth.value && props.marquee,
       (val) => {
-        if (!val) nextTick(() => stopMarquee());
-        else nextTick(() => startMarquee());
+        if (!val) stopMarquee();
+        else startMarquee();
       },
       { immediate: true },
     );
 
-    const fps = useFps();
-    const timestamp = ref(0);
     const {
+      stamp: timestamp,
       pause: pauseApexesSeriesTransform,
       resume: resumeApexesSeriesTransform,
-    } = useRafFn(({ delta }) => {
-      if (delta > fps.value * 3) return;
-      timestamp.value += delta;
-    });
+    } = useTransformation();
+
     const duration = computed<number>(() => {
       return (
         props.apexesSeriesTransformDuration || props.transitionDuration || 500
@@ -186,10 +183,8 @@ export const VueSurf = defineComponent({
     watch(
       () => props.apexesSeries,
       (val) => {
-        if (val) {
-          resumeApexesSeriesTransform();
-          timestamp.value += duration.value * 0.9;
-        } else pauseApexesSeriesTransform();
+        if (val && val.length > 1) resumeApexesSeriesTransform();
+        else pauseApexesSeriesTransform();
       },
       { immediate: true },
     );
@@ -214,10 +209,7 @@ export const VueSurf = defineComponent({
     const resetTransition = debounce(() => {
       isTransition.value = true;
       if (props.marquee) startMarquee();
-      if (props.apexesSeries) {
-        resumeApexesSeriesTransform();
-        timestamp.value += duration.value * 0.9;
-      }
+      if (props.apexesSeries) resumeApexesSeriesTransform();
     });
     function transitionToggle() {
       pauseApexesSeriesTransform();
@@ -562,15 +554,17 @@ export const VueSurf = defineComponent({
                             },
                             [
                               colorProp.steps.length > 0 &&
-                                Array.from(colorProp.steps).map((colorStep) => {
-                                  return h("stop", {
-                                    offset: colorStep.offset,
-                                    style: {
-                                      stopColor: colorStep.color,
-                                      stopOpacity: colorStep.opacity,
-                                    },
-                                  });
-                                }),
+                                Array.from(colorProp.steps).map(
+                                  ({ offset, color, opacity }) => {
+                                    return h("stop", {
+                                      offset,
+                                      style: {
+                                        stopColor: color,
+                                        stopOpacity: opacity,
+                                      },
+                                    });
+                                  },
+                                ),
                             ],
                           ),
                         ]),
