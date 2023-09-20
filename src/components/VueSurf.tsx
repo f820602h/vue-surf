@@ -208,21 +208,23 @@ export const VueSurf = defineComponent({
       let timer = 0;
       return function () {
         if (timer) clearTimeout(timer);
-        timer = window.setTimeout(func, 100);
+        timer = window.setTimeout(func, 300);
       };
     }
-
+    const resetTransition = debounce(() => {
+      isTransition.value = true;
+      if (props.marquee) startMarquee();
+      if (props.apexesSeries) {
+        resumeApexesSeriesTransform();
+        timestamp.value += duration.value * 0.9;
+      }
+    });
     function transitionToggle() {
       pauseApexesSeriesTransform();
       stopMarquee();
       isTransition.value = false;
       resetTransition();
     }
-    const resetTransition = debounce(() => {
-      isTransition.value = true;
-      if (props.marquee) startMarquee();
-      if (props.apexesSeries) resumeApexesSeriesTransform();
-    });
     onBeforeMount(() => {
       window.addEventListener("resize", transitionToggle);
     });
@@ -432,7 +434,7 @@ export const VueSurf = defineComponent({
         }
       }, "");
 
-      return `M0 ${origin} L0 ${path} L100 ${origin}Z`;
+      return `M0 ${origin} L0 ${path} L101 0 L101 ${origin}Z`;
     });
 
     const pathColor = computed<string>(() => {
@@ -471,7 +473,7 @@ export const VueSurf = defineComponent({
         width: `${totalWaveLength}px`,
         maxWidth: `${totalWaveLength}px`,
         height: "100%",
-        marginLeft: `-${totalWaveLength / 5}px`,
+        marginLeft: `-${(totalWaveLength / 5) * 2}px`,
         transition: transition.value,
         overflow: "hidden",
       };
