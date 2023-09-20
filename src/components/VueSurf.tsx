@@ -303,16 +303,13 @@ export const VueSurf = defineComponent({
     }
 
     function getDistancePercent(d: number) {
-      return getLengthPercentNumber(
-        d,
-        waveLength.value * repeatTimes.value * 5,
-      );
+      return getLengthPercentNumber(d, waveLength.value * repeatTimes.value);
     }
 
     const wavePath = computed<string>(() => {
       const origin = props.side === "bottom" ? "-0.1" : "100.1";
       const originLength = apexesPixelNumberArray.value.length;
-      const apexes: number[][] = Array.from({ length: repeatTimes.value * 5 })
+      const apexes: number[][] = Array.from({ length: repeatTimes.value })
         .map(() => apexesPixelNumberArray.value)
         .flat();
 
@@ -474,7 +471,7 @@ export const VueSurf = defineComponent({
         width: `${totalWaveLength}px`,
         maxWidth: `${totalWaveLength}px`,
         height: "100%",
-        marginLeft: props.marquee ? `-200%` : "",
+        marginLeft: `-${totalWaveLength / 5}px`,
         transition: transition.value,
         overflow: "hidden",
       };
@@ -483,7 +480,7 @@ export const VueSurf = defineComponent({
     const svgStyle = computed(() => {
       return {
         flexShrink: 0,
-        width: `${waveLength.value * repeatTimes.value * 5}px`,
+        width: `${waveLength.value * repeatTimes.value}px`,
         height: `${waveHeight.value}px`,
         transition: transition.value,
       };
@@ -539,42 +536,45 @@ export const VueSurf = defineComponent({
             "div",
             { class: "vue-wave__repeat-wrapper", style: repeatWrapperStyle },
             [
-              repeatTimes * 5 > 0 &&
-                h(
-                  "svg",
-                  {
-                    xmlns: "http://www.w3.org/2000/svg",
-                    viewBox: "0,0,100,100",
-                    preserveAspectRatio: "none",
-                    style: svgStyle,
-                  },
-                  [
-                    typeof colorProp !== "string" &&
-                      h("defs", [
-                        h(
-                          "linearGradient",
-                          {
-                            id: `gradient-${colorProp.name}`,
-                            gradientTransform: `rotate(${
-                              colorProp.rotate || 0
-                            })`,
-                          },
-                          [
-                            colorProp.steps.length > 0 &&
-                              Array.from(colorProp.steps).map((colorStep) => {
-                                return h("stop", {
-                                  offset: colorStep.offset,
-                                  style: {
-                                    stopColor: colorStep.color,
-                                    stopOpacity: colorStep.opacity,
-                                  },
-                                });
-                              }),
-                          ],
-                        ),
-                      ]),
-                    h("path", { d: wavePath, style: pathStyle }),
-                  ],
+              repeatTimes > 0 &&
+                Array.from({ length: 5 }).map((_, i) =>
+                  h(
+                    "svg",
+                    {
+                      xmlns: "http://www.w3.org/2000/svg",
+                      viewBox: "0,0,100,100",
+                      preserveAspectRatio: "none",
+                      style: svgStyle,
+                    },
+                    [
+                      typeof colorProp !== "string" &&
+                        i === 0 &&
+                        h("defs", [
+                          h(
+                            "linearGradient",
+                            {
+                              id: `gradient-${colorProp.name}`,
+                              gradientTransform: `rotate(${
+                                colorProp.rotate || 0
+                              }, .5, .5)`,
+                            },
+                            [
+                              colorProp.steps.length > 0 &&
+                                Array.from(colorProp.steps).map((colorStep) => {
+                                  return h("stop", {
+                                    offset: colorStep.offset,
+                                    style: {
+                                      stopColor: colorStep.color,
+                                      stopOpacity: colorStep.opacity,
+                                    },
+                                  });
+                                }),
+                            ],
+                          ),
+                        ]),
+                      h("path", { d: wavePath, style: pathStyle }),
+                    ],
+                  ),
                 ),
             ],
           ),
