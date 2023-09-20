@@ -100,8 +100,6 @@ const color = reactive({
 
 <img src="./graphs/linear-gradients.png" alt="apexes-series" width="100%">
 
-> If you wish to avoid a zebra-like pattern in the horizontal gradient, you will need to manually increase the length of the `apexes`.
-
 > Radial gradients are currently not supported
 
 <br/>
