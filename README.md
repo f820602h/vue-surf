@@ -27,6 +27,13 @@ Very customized animated svg wave Vue component
 
 <br>
 
+## Why ?
+Current solutions for adding cool waves to websites are often less controllable. Many SVG Wave Generators generate random shapes, if you want to add animation, the randomness factor increases even more.
+
+And the output is usually just image files. If you want to make changes later on, you'll need to regenerate them.
+
+<br>
+
 ## Install
 
 ```
