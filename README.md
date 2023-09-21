@@ -122,42 +122,6 @@ In addition to the regular wave pattern, VueSurf also offer options for a serrat
 
 <br/>
 
-### apexes
-```typescript
-export type Apex = {
-  distance: number | string;
-  height: number | string;
-};
-export type ApexParametersTuple = [
-  Apex["distance"],
-  Apex["height"],
-];
-export type Apex = Apex | ApexParametersTuple;
-
-apexes: {
-  type: Array as () => Apex[],
-  default: undefined,
-}
-```
-
-Configuring the primary parameters of the wave involves an array composed of multiple parameter sets describing the `distance` and `height` of the apexes.
-
-  <img src="./graphs/apex.png" alt="apex" width="100%">
-
-Here, the term `distance` refers to the length of separation from the **previous apex**. And `height` denotes the vertical distance of the apex from the reference plane used for calculation.
-
-Both `distance` and `height`, similar to `width`, accept direct `number` values representing pixels or `string` with `px` or `%` units.
-
-```typescript
-const apexes = ref([
-  [0, 100],
-  [100, "20%"],
-  {distance: "100px", height: 70}
-])
-```
-
-<br/>
-
 ### apexesSeries
 ```typescript
 export type Apex =

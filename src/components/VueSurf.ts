@@ -305,10 +305,9 @@ export const VueSurf = defineComponent({
 
       let sumDistance = 0;
       let path = "";
+      const alreadyDown = false;
 
       path += apexes.reduce((acc, [d, h], index, arr) => {
-        const isHidden = !props.repeat && index > originLength;
-
         const halfBetweenPrev = average(d, 0);
         const apexSvgXPercent = getDistancePercent(sumDistance + d);
         const apexSvgYPercent = getHeightPercent(h);
@@ -318,6 +317,14 @@ export const VueSurf = defineComponent({
         } else {
           const prevApexSvgXPercent = getDistancePercent(sumDistance);
           const prevApexSvgYPercent = getHeightPercent(arr[index - 1][1]);
+
+          if (!props.repeat && index > originLength) {
+            let point = ` L ${apexSvgXPercent} ${origin}`;
+            if (!alreadyDown)
+              point = ` L ${prevApexSvgXPercent} ${origin}` + point;
+            sumDistance += d;
+            return (acc += point);
+          }
 
           let smoothness = 0;
           if (index !== arr.length - 1 && index !== 1) {
@@ -338,83 +345,76 @@ export const VueSurf = defineComponent({
           let secondControlPointX: number;
           let secondControlPointY: number;
 
-          if (isHidden) {
-            firstControlPointX = prevApexSvgXPercent;
-            firstControlPointY = Number(origin);
-            secondControlPointX = prevApexSvgXPercent;
-            secondControlPointY = Number(origin);
-          } else {
-            switch (currentShape.value) {
-              case "wavy":
-                firstControlPointX = getDistancePercent(
-                  middleBetweenPrevSvgX + smoothness,
-                );
-                break;
-              case "serrated":
-                firstControlPointX = prevApexSvgXPercent;
-                break;
+          switch (currentShape.value) {
+            case "wavy":
+              firstControlPointX = getDistancePercent(
+                middleBetweenPrevSvgX + smoothness,
+              );
+              break;
+            case "serrated":
+              firstControlPointX = prevApexSvgXPercent;
+              break;
 
-              case "petal":
-                firstControlPointX =
-                  h < arr[index - 1][1] ? apexSvgXPercent : prevApexSvgXPercent;
-                break;
-              default:
-                firstControlPointX = getDistancePercent(
-                  middleBetweenPrevSvgX + smoothness,
-                );
-            }
+            case "petal":
+              firstControlPointX =
+                h < arr[index - 1][1] ? apexSvgXPercent : prevApexSvgXPercent;
+              break;
+            default:
+              firstControlPointX = getDistancePercent(
+                middleBetweenPrevSvgX + smoothness,
+              );
+          }
 
-            switch (currentShape.value) {
-              case "wavy":
-                firstControlPointY = prevApexSvgYPercent;
-                break;
-              case "serrated":
-                firstControlPointY = prevApexSvgYPercent;
-                break;
-              case "petal":
-                firstControlPointY =
-                  h < arr[index - 1][1] ? prevApexSvgYPercent : apexSvgYPercent;
-                break;
-              default:
-                firstControlPointY = prevApexSvgYPercent;
-            }
+          switch (currentShape.value) {
+            case "wavy":
+              firstControlPointY = prevApexSvgYPercent;
+              break;
+            case "serrated":
+              firstControlPointY = prevApexSvgYPercent;
+              break;
+            case "petal":
+              firstControlPointY =
+                h < arr[index - 1][1] ? prevApexSvgYPercent : apexSvgYPercent;
+              break;
+            default:
+              firstControlPointY = prevApexSvgYPercent;
+          }
 
-            switch (currentShape.value) {
-              case "wavy":
-                secondControlPointX = getDistancePercent(
-                  middleBetweenPrevSvgX - smoothness,
-                );
-                break;
-              case "serrated":
-                secondControlPointX = apexSvgXPercent;
-                break;
-              case "petal":
-                secondControlPointX = apexSvgXPercent;
-                break;
-              default:
-                secondControlPointX = getDistancePercent(
-                  middleBetweenPrevSvgX - smoothness,
-                );
-            }
+          switch (currentShape.value) {
+            case "wavy":
+              secondControlPointX = getDistancePercent(
+                middleBetweenPrevSvgX - smoothness,
+              );
+              break;
+            case "serrated":
+              secondControlPointX = apexSvgXPercent;
+              break;
+            case "petal":
+              secondControlPointX = apexSvgXPercent;
+              break;
+            default:
+              secondControlPointX = getDistancePercent(
+                middleBetweenPrevSvgX - smoothness,
+              );
+          }
 
-            switch (currentShape.value) {
-              case "wavy":
-                secondControlPointY = apexSvgYPercent;
-                break;
-              case "serrated":
-                secondControlPointY = apexSvgYPercent;
-                break;
-              case "petal":
-                secondControlPointY = apexSvgYPercent;
-                break;
-              default:
-                secondControlPointY = apexSvgYPercent;
-            }
+          switch (currentShape.value) {
+            case "wavy":
+              secondControlPointY = apexSvgYPercent;
+              break;
+            case "serrated":
+              secondControlPointY = apexSvgYPercent;
+              break;
+            case "petal":
+              secondControlPointY = apexSvgYPercent;
+              break;
+            default:
+              secondControlPointY = apexSvgYPercent;
           }
 
           const firstControlPoint = `${firstControlPointX} ${firstControlPointY}`;
           const secondControlPoint = `${secondControlPointX} ${secondControlPointY}`;
-          const end = `${apexSvgXPercent} ${isHidden ? 0 : apexSvgYPercent}`;
+          const end = `${apexSvgXPercent} ${apexSvgYPercent}`;
 
           sumDistance += d;
 
