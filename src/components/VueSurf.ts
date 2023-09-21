@@ -208,12 +208,8 @@ export const VueSurf = defineComponent({
     }
     const resetTransition = debounce(() => {
       isTransition.value = true;
-      if (props.marquee) startMarquee();
-      if (props.apexesSeries) resumeApexesSeriesTransform();
     });
     function transitionToggle() {
-      pauseApexesSeriesTransform();
-      stopMarquee();
       isTransition.value = false;
       resetTransition();
     }
@@ -437,8 +433,11 @@ export const VueSurf = defineComponent({
       return props.side === "bottom" ? "flex-start" : "flex-end";
     });
     const transition = computed<string>(() => {
-      if (!props.transitionDuration || !isTransition.value) return "";
-      return `width ${props.transitionDuration}ms linear, height ${props.transitionDuration}ms linear, margin ${props.transitionDuration}ms linear`;
+      if (!props.transitionDuration) return "";
+      const widthTransition = isTransition.value
+        ? `width ${props.transitionDuration}ms linear, margin-left ${props.transitionDuration}ms linear, `
+        : "";
+      return `${widthTransition} height ${props.transitionDuration}ms linear, margin-top ${props.transitionDuration}ms linear ,margin-bottom ${props.transitionDuration}ms linear`;
     });
 
     const containerStyle = computed<StyleValue>(() => {
@@ -483,9 +482,9 @@ export const VueSurf = defineComponent({
     const pathStyle = computed(() => {
       return {
         fill: pathColor.value,
-        transition: isTransition.value
-          ? `${props.transitionDuration}ms linear`
-          : "",
+        transition: !props.transitionDuration
+          ? ""
+          : `${props.transitionDuration}ms linear`,
       };
     });
 
