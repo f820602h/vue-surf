@@ -124,14 +124,14 @@ In addition to the regular wave pattern, VueSurf also offer options for a serrat
 
 ### apexesSeries
 ```typescript
-export type Apex =
+type Apex =
   | [number | string, number | string]
   | {
       distance: number | string;
       height: number | string;
     };
 
-export type Apexes =
+type Apexes =
   | Apex[]
   | {
       apexes: Apex[];
@@ -146,10 +146,10 @@ apexesSeries: {
 ```
 #### What is Apex?
 
-An apex is configured as the smallest unit of a wave, consisting of both `height` and `distance`. You can represent it using either an object or an array.
+An apex is configured as the smallest unit of a wave, consisting of both `distance` and `height`. You can represent it using either an object or an array.
 
 ```typescript
-const apex = ref<Apex>([0, "50%"]);
+const apex = ref<Apex>([0, "50%"]); // [distance, height]
 // or 
 const apex = ref<Apex>({ distance: 0, height: "50%" });
 ```
@@ -160,7 +160,7 @@ Both `distance` and `height` accept direct `number` values representing pixels o
 
 <img src="./graphs/apex.png" alt="apex" width="100%">
 
-> It is noteworthy that when configured using percentages, they will be calculated relative to the width of the wave. <br/>
+> ⚠️ It is noteworthy that when configured using percentages, they will be calculated relative to the width of the wave. <br/>
 
 #### What is Apexes?
 
@@ -188,14 +188,14 @@ const myApexes = ref<Apexes>({
 });
 ```
 
-> Due to the absence of a preceding apex for the first apex, any distance configuration for it will be disregarded.
+> ⚠️ Due to the absence of a preceding apex for the first apex, any distance configuration for it will be disregarded.
 
 #### Setting ApexesSeries
 
 ApexesSeries is an array composed of one or multiple `apexes`. Similarly, you have the option to utilize either object or array formats for apexes within it."
 
 ```typescript
-const apexesSeries = ref([
+const apexesSeries = ref<Apexes[]>([
   [
     { distance: 0, height: "20%" },
     [120, 60],
@@ -222,7 +222,7 @@ When you pass an ApexesSeries with a length greater than 1, the wave transformat
 Of course, you can also directly replace the values of ApexesSeries dynamically to achieve the transformation effect.
 
 ```typescript
-const apexesSeries = ref([
+const apexesSeries = ref<Apexes[]>([
   [
     [0, 50],
     [100, 0],
@@ -237,7 +237,7 @@ apexesSeries.value = [
 ]
 ```
 
-> Please ensure that each `apexes` within the `apexesSeries` possesses an equal length to maintain the effectiveness of the transformation animation."
+> ⚠️ Please ensure that each `apexes` within the `apexesSeries` possesses an equal **length** and **total distance** to maintain the effectiveness of the transformation animation."
 
 <br/>
 
@@ -363,7 +363,7 @@ Alternatively, you can provide a `number` value between 0 and 1 to adjust the le
   <img src="./graphs/smooth-false.png" alt="smooth-false" width="45%">
 </p>
 
->If the numerical disparities are indeed substantial, the extent of smoothing may still remain limited
+>⚠️ If the numerical disparities are indeed substantial, the extent of smoothing may still remain limited
 
 <br/>
 

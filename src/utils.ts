@@ -5,28 +5,30 @@ const percentRegex = /(\d+)%/;
 
 export const errorText = {
   parentNoWidth:
-    "[Vue Surf] parent element must have a width when using '%' to set width",
-  lengthPositive: "[Vue Surf] please provide a positive length value",
+    "[Vue Surf] parent element must have a width when using '%' to set width.",
+  lengthPositive: "[Vue Surf] please provide a positive length value.",
   lengthFormat:
-    "[Vue Surf] length must be a positive number or string with unit 'px' or '%'",
+    "[Vue Surf] length must be a positive number or string with unit 'px' or '%'.",
   apexFormat:
-    "[Vue Surf] apex must be an array of [distance, height] or {distance: number, height: number}",
-  apexesFormat: "[Vue Surf] apexes must be a not empty array",
+    "[Vue Surf] apex must be an array of [number | string, number | string] or { distance: number, height: number }.",
+  apexesFormat: "[Vue Surf] 'apexes' need at least two apexes.",
   apexesHeightZero:
-    "[Vue Surf] at least one apex height must be greater than 0",
+    "[Vue Surf] at least one apex height must be greater than 0.",
   apexesLengthZero:
-    "[Vue Surf] at least one apex length must be greater than 0",
-  apexesSeriesFormat: "[Vue Surf] apexesSeries must be a not empty array",
+    "[Vue Surf] at least one apex length must be greater than 0.",
+  apexesSeriesFormat: "[Vue Surf] apexesSeries must be a not empty array.",
   apexesLengthChanged:
-    "[Vue Surf] Apexes length changed, animation may be broken",
-  colorFormat: "[Vue Surf] color must be a string or object",
-  colorNameFormat: "[Vue Surf] color.name must be a string",
-  colorRotateFormat: "[Vue Surf] color.rotate must be a number",
+    "[Vue Surf] Apexes length changed, animation may be broken.",
+  apexesTotalDistanceChanged:
+    "[Vue Surf] Apexes total distance changed, animation may be broken.",
+  colorFormat: "[Vue Surf] color must be a string or object.",
+  colorNameFormat: "[Vue Surf] color.name must be a string.",
+  colorRotateFormat: "[Vue Surf] color.rotate must be a number.",
   ColorStepsFormat:
-    "[Vue Surf] color.steps must be a not empty array of {offset: number, color: string, opacity?: number}",
-  colorStepOpacityFormat: "[Vue Surf] colorStep.opacity must be a number",
-  shape: "[Vue Surf] shape must be one of 'wavy', 'serrated', 'petal'",
-  side: "[Vue Surf] side must be one of 'top', 'bottom'",
+    "[Vue Surf] color.steps must be a not empty array of { offset: number, color: string, opacity?: number }.",
+  colorStepOpacityFormat: "[Vue Surf] colorStep.opacity must be a number.",
+  shape: "[Vue Surf] shape must be one of 'wavy', 'serrated', 'petal'.",
+  side: "[Vue Surf] side must be one of 'top', 'bottom'.",
 };
 
 export function lengthValidator(val: number | string): boolean {
@@ -45,7 +47,7 @@ export function lengthValidator(val: number | string): boolean {
 
 export function apexesValidator(val: Apex[]): boolean {
   if (!val) return true;
-  if (!Array.isArray(val) || (Array.isArray(val) && val.length === 0)) {
+  if (!Array.isArray(val) || (Array.isArray(val) && val.length < 1)) {
     throw new Error(errorText.apexesFormat);
   }
 

@@ -145,6 +145,78 @@ export const VueSurf = defineComponent({
     const counter = computed<number>(() => {
       return Math.floor(timestamp.value / duration.value);
     });
+
+    const isTransition = ref<boolean>(true);
+    function debounce(func: () => void) {
+      let timer = 0;
+      return function () {
+        if (timer) clearTimeout(timer);
+        timer = window.setTimeout(func, 300);
+      };
+    }
+    const resetTransition = debounce(() => {
+      isTransition.value = true;
+    });
+    function transitionToggle() {
+      isTransition.value = false;
+      resetTransition();
+    }
+    onBeforeMount(() => {
+      window.addEventListener("resize", transitionToggle);
+    });
+    onBeforeUnmount(() => {
+      window.removeEventListener("resize", transitionToggle);
+    });
+
+    function getClosureApexes(apexes: Apex[]): Apex[] {
+      if (!props.closure) return apexes;
+      const resultApexes = [...apexes];
+      const firstApex = resultApexes[0];
+      const lastApex = resultApexes[resultApexes.length - 1];
+
+      const firstApexHeight = Array.isArray(firstApex)
+        ? firstApex[1]
+        : "height" in firstApex
+        ? firstApex.height
+        : 0;
+      const lastApexDistance = Array.isArray(lastApex)
+        ? lastApex[0]
+        : "distance" in lastApex
+        ? lastApex.distance
+        : 0;
+
+      resultApexes[0] = [0, firstApexHeight];
+      resultApexes[resultApexes.length - 1] = [
+        lastApexDistance,
+        firstApexHeight,
+      ];
+
+      return resultApexes;
+    }
+    function getApexesPixelNumberArray(apexes: Apex[]): number[][] {
+      return getClosureApexes(apexes).map((apex) => {
+        if (Array.isArray(apex)) {
+          return [
+            getLengthPixelNumber(apex[0], waveElWidth.value),
+            getLengthPixelNumber(apex[1], waveElWidth.value),
+          ];
+        } else if ("distance" in apex && "height" in apex) {
+          return [
+            getLengthPixelNumber(apex.distance, waveElWidth.value),
+            getLengthPixelNumber(apex.height, waveElWidth.value),
+          ];
+        }
+        console.warn(errorText.apexesFormat);
+        return [1, 1];
+      });
+    }
+    function gerWaveLength(apexes: Apex[]): number {
+      return getApexesPixelNumberArray(apexes).reduce((acc, [d]) => acc + d, 0);
+    }
+    function gerWaveHeight(apexes: Apex[]): number {
+      return Math.max(...getApexesPixelNumberArray(apexes).map(([, h]) => h));
+    }
+
     const apexesSeriesIndex = computed<number>(() => {
       if (!props.apexesSeries) return 0;
       return counter.value % props.apexesSeries.length;
@@ -175,6 +247,20 @@ export const VueSurf = defineComponent({
       return props.color || "white";
     });
 
+    const apexesPixelNumberArray = computed<number[][]>(() => {
+      return getApexesPixelNumberArray(currentApexes.value);
+    });
+    const waveLength = computed<number>(() => {
+      return gerWaveLength(currentApexes.value);
+    });
+    const waveHeight = computed<number>(() => {
+      return gerWaveHeight(currentApexes.value);
+    });
+    const repeatTimes = computed<number>(() => {
+      if (!waveElWidth.value) return 0;
+      return Math.ceil(waveElWidth.value / waveLength.value);
+    });
+
     watch(
       () => props.apexesSeries,
       (val) => {
@@ -188,6 +274,8 @@ export const VueSurf = defineComponent({
       async (newVal, oldVal) => {
         if (oldVal && newVal.length !== oldVal.length) {
           console.warn(errorText.apexesLengthChanged);
+        } else if (waveLength.value !== gerWaveLength(newVal)) {
+          console.warn(errorText.apexesTotalDistanceChanged);
         }
         props.onApexesChanged?.(
           [...newVal],
@@ -198,28 +286,6 @@ export const VueSurf = defineComponent({
       { deep: true },
     );
 
-    const isTransition = ref<boolean>(true);
-    function debounce(func: () => void) {
-      let timer = 0;
-      return function () {
-        if (timer) clearTimeout(timer);
-        timer = window.setTimeout(func, 300);
-      };
-    }
-    const resetTransition = debounce(() => {
-      isTransition.value = true;
-    });
-    function transitionToggle() {
-      isTransition.value = false;
-      resetTransition();
-    }
-    onBeforeMount(() => {
-      window.addEventListener("resize", transitionToggle);
-    });
-    onBeforeUnmount(() => {
-      window.removeEventListener("resize", transitionToggle);
-    });
-
     const smoothRatio = computed<number>(() => {
       if (typeof props.smooth === "number") {
         return props.smooth > 1 ? 1 : props.smooth < 0 ? 0 : props.smooth;
@@ -228,63 +294,6 @@ export const VueSurf = defineComponent({
       } else {
         return 0;
       }
-    });
-
-    const closureApexes = computed<Apex[]>(() => {
-      if (!props.closure) return currentApexes.value;
-      const resultApexes = [...currentApexes.value];
-      const firstApex = resultApexes[0];
-      const lastApex = resultApexes[resultApexes.length - 1];
-
-      const firstApexHeight = Array.isArray(firstApex)
-        ? firstApex[1]
-        : "height" in firstApex
-        ? firstApex.height
-        : 0;
-      const lastApexDistance = Array.isArray(lastApex)
-        ? lastApex[0]
-        : "distance" in lastApex
-        ? lastApex.distance
-        : 0;
-
-      resultApexes[0] = [0, firstApexHeight];
-      resultApexes[resultApexes.length - 1] = [
-        lastApexDistance,
-        firstApexHeight,
-      ];
-
-      return resultApexes;
-    });
-
-    const apexesPixelNumberArray = computed<number[][]>(() => {
-      return closureApexes.value.map((apex) => {
-        if (Array.isArray(apex)) {
-          return [
-            getLengthPixelNumber(apex[0], waveElWidth.value),
-            getLengthPixelNumber(apex[1], waveElWidth.value),
-          ];
-        } else if ("distance" in apex && "height" in apex) {
-          return [
-            getLengthPixelNumber(apex.distance, waveElWidth.value),
-            getLengthPixelNumber(apex.height, waveElWidth.value),
-          ];
-        }
-        console.warn(errorText.apexesFormat);
-        return [1, 1];
-      });
-    });
-
-    const waveHeight = computed<number>(() => {
-      return Math.max(...apexesPixelNumberArray.value.map(([, h]) => h));
-    });
-
-    const waveLength = computed<number>(() => {
-      return apexesPixelNumberArray.value.reduce((acc, [d]) => acc + d, 0);
-    });
-
-    const repeatTimes = computed<number>(() => {
-      if (!waveElWidth.value) return 0;
-      return Math.ceil(waveElWidth.value / waveLength.value);
     });
 
     function getHeightPercent(h: number) {
@@ -297,15 +306,20 @@ export const VueSurf = defineComponent({
     }
 
     const wavePath = computed<string>(() => {
+      if (!repeatTimes.value) return "";
       const origin = props.side === "bottom" ? "-0.1" : "100.1";
-      const originLength = apexesPixelNumberArray.value.length;
       const apexes: number[][] = Array.from({ length: repeatTimes.value })
-        .map(() => apexesPixelNumberArray.value)
+        .map((_, i) => {
+          if (i === 0) return apexesPixelNumberArray.value;
+          return props.repeat
+            ? apexesPixelNumberArray.value
+            : apexesPixelNumberArray.value.map(([d]) => {
+                return [d, 0];
+              });
+        })
         .flat();
-
       let sumDistance = 0;
       let path = "";
-      const alreadyDown = false;
 
       path += apexes.reduce((acc, [d, h], index, arr) => {
         const halfBetweenPrev = average(d, 0);
@@ -317,14 +331,6 @@ export const VueSurf = defineComponent({
         } else {
           const prevApexSvgXPercent = getDistancePercent(sumDistance);
           const prevApexSvgYPercent = getHeightPercent(arr[index - 1][1]);
-
-          if (!props.repeat && index > originLength) {
-            let point = ` L ${apexSvgXPercent} ${origin}`;
-            if (!alreadyDown)
-              point = ` L ${prevApexSvgXPercent} ${origin}` + point;
-            sumDistance += d;
-            return (acc += point);
-          }
 
           let smoothness = 0;
           if (index !== arr.length - 1 && index !== 1) {
@@ -422,7 +428,7 @@ export const VueSurf = defineComponent({
         }
       }, "");
 
-      return `M0 ${origin} L0 ${path} L101 0 L101 ${origin}Z`;
+      return `M-10 ${origin} L-10 0 L0 ${path} L110 0 L110 ${origin}Z`;
     });
 
     const alignItems = computed<string>(() => {
@@ -597,7 +603,7 @@ export const VueSurf = defineComponent({
                             ],
                           ),
                         ]),
-                      h("path", { d: wavePath, style: pathStyle }),
+                      wavePath && h("path", { d: wavePath, style: pathStyle }),
                     ],
                   ),
                 ),
