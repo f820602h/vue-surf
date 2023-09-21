@@ -441,10 +441,10 @@ A callback function that is invoked when there is an update to the apexes.
 ## Exposed Methods
 
 ```html
-<script setup>
-import { VueSurf } from "vue-surf";
+<script setup lang="ts">
+import { VueSurf, type WaveExpose } from "vue-surf";
 
-const vueSurf = ref(null)
+const vueSurf = ref<WaveExpose>(null)
 </script>
 
 <template>

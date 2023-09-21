@@ -106,6 +106,7 @@ import { VueSurf } from "../../src/components/VueSurf";
           { offset: 1, color: '#182848' },
         ],
       }"
+      :smooth="false"
       :closure="false"
       :marquee="false"
       :transition-duration="1500"
@@ -127,6 +128,7 @@ import { VueSurf } from "../../src/components/VueSurf";
           { offset: 1, color: '#16222a' },
         ],
       }"
+      :smooth="false"
       :closure="false"
       :marquee="false"
       :transition-duration="0"

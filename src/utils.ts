@@ -1,4 +1,10 @@
-import { Apex, WaveShape, WaveSide, LinearGradientColor } from "./types";
+import {
+  Apex,
+  Apexes,
+  WaveShape,
+  WaveSide,
+  LinearGradientColor,
+} from "./types";
 
 const pixelRegex = /(\d+)px/;
 const percentRegex = /(\d+)%/;
@@ -84,6 +90,24 @@ export function apexesValidator(val: Apex[]): boolean {
   return isValidFormat && atLeastOneDistanceNotZero && atLeastOneHeightNotZero;
 }
 
+export function apexesSeriesValidator(val: Apexes[]): boolean {
+  if (!val) return true;
+  if (!Array.isArray(val) || (Array.isArray(val) && val.length === 0)) {
+    throw new Error(errorText.apexesSeriesFormat);
+  }
+  return val.every((apexes) => {
+    if (Array.isArray(apexes)) {
+      return apexesValidator(apexes);
+    } else if ("apexes" in apexes) {
+      if ("shape" in apexes && !!apexes.shape) {
+        return shapeValidator(apexes.shape);
+      }
+      return apexesValidator(apexes.apexes);
+    }
+    return false;
+  });
+}
+
 export function shapeValidator(val: string): val is WaveShape {
   const waveShape: string[] = ["wavy", "serrated", "petal"];
   if (!val) return true;
@@ -167,4 +191,12 @@ export function getLengthPercentNumber(
 
 export function average(...arg: number[]): number {
   return arg.reduce((a, b) => a + b, 0) / arg.length;
+}
+
+export function debounce(func: () => void) {
+  let timer = 0;
+  return function () {
+    if (timer) clearTimeout(timer);
+    timer = window.setTimeout(func, 300);
+  };
 }

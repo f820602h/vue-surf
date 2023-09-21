@@ -8,6 +8,7 @@ import {
   LinearGradientColor,
   ApexesChangedCallback,
 } from "../types";
+
 import type { DefineComponent, PropType, StyleValue } from "vue";
 import {
   ref,
@@ -21,14 +22,14 @@ import {
 import {
   errorText,
   lengthValidator,
-  apexesValidator,
+  apexesSeriesValidator,
   shapeValidator,
   sideValidator,
   colorValidator,
   getLengthPixelNumber,
-  getLengthPercentNumber,
-  average,
+  debounce,
 } from "../utils";
+import { plotter } from "../plotter";
 import { useMarquee } from "../composables/marquee";
 import { useTransformation } from "../composables/transformation";
 import { useElementSize } from "@vueuse/core";
@@ -41,6 +42,11 @@ export const VueSurf = defineComponent({
       default: "100%",
       validator: lengthValidator,
     },
+    color: {
+      type: [String, Object] as PropType<string | LinearGradientColor>,
+      default: "white",
+      validator: colorValidator,
+    },
     shape: {
       type: String as () => WaveShape,
       default: "wavy",
@@ -49,33 +55,12 @@ export const VueSurf = defineComponent({
     apexesSeries: {
       type: Array as () => Apexes[],
       required: true,
-      validator: (val: Apexes[]) => {
-        if (!val) return true;
-        if (!Array.isArray(val) || (Array.isArray(val) && val.length === 0)) {
-          throw new Error(errorText.apexesSeriesFormat);
-        }
-        return val.every((apexes) => {
-          if (Array.isArray(apexes)) {
-            return apexesValidator(apexes);
-          } else if ("apexes" in apexes) {
-            if ("shape" in apexes && !!apexes.shape) {
-              return shapeValidator(apexes.shape);
-            }
-            return apexesValidator(apexes.apexes);
-          }
-          return false;
-        });
-      },
+      validator: apexesSeriesValidator,
     },
     side: {
       type: String as () => WaveSide,
       default: "top",
       validator: sideValidator,
-    },
-    color: {
-      type: [String, Object] as PropType<string | LinearGradientColor>,
-      default: "white",
-      validator: colorValidator,
     },
     repeat: {
       type: Boolean,
@@ -136,24 +121,16 @@ export const VueSurf = defineComponent({
       pause: pauseApexesSeriesTransform,
       resume: resumeApexesSeriesTransform,
     } = useTransformation();
-
-    const duration = computed<number>(() => {
-      return (
-        props.apexesSeriesTransformDuration || props.transitionDuration || 500
-      );
-    });
-    const counter = computed<number>(() => {
-      return Math.floor(timestamp.value / duration.value);
-    });
+    watch(
+      () => props.apexesSeries,
+      (val) => {
+        if (val && val.length > 1) resumeApexesSeriesTransform();
+        else pauseApexesSeriesTransform();
+      },
+      { immediate: true, deep: true },
+    );
 
     const isTransition = ref<boolean>(true);
-    function debounce(func: () => void) {
-      let timer = 0;
-      return function () {
-        if (timer) clearTimeout(timer);
-        timer = window.setTimeout(func, 300);
-      };
-    }
     const resetTransition = debounce(() => {
       isTransition.value = true;
     });
@@ -217,10 +194,16 @@ export const VueSurf = defineComponent({
       return Math.max(...getApexesPixelNumberArray(apexes).map(([, h]) => h));
     }
 
+    const counter = computed<number>(() => {
+      const duration =
+        props.apexesSeriesTransformDuration || props.transitionDuration || 500;
+      return Math.floor(timestamp.value / duration);
+    });
     const apexesSeriesIndex = computed<number>(() => {
       if (!props.apexesSeries) return 0;
       return counter.value % props.apexesSeries.length;
     });
+
     const currentApexes = computed<Apex[]>(() => {
       if (props.apexesSeries && props.apexesSeries.length > 0) {
         const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
@@ -247,7 +230,7 @@ export const VueSurf = defineComponent({
       return props.color || "white";
     });
 
-    const apexesPixelNumberArray = computed<number[][]>(() => {
+    const apexesPixelSet = computed<number[][]>(() => {
       return getApexesPixelNumberArray(currentApexes.value);
     });
     const waveLength = computed<number>(() => {
@@ -261,14 +244,6 @@ export const VueSurf = defineComponent({
       return Math.ceil(waveElWidth.value / waveLength.value);
     });
 
-    watch(
-      () => props.apexesSeries,
-      (val) => {
-        if (val && val.length > 1) resumeApexesSeriesTransform();
-        else pauseApexesSeriesTransform();
-      },
-      { immediate: true, deep: true },
-    );
     watch(
       () => currentApexes.value,
       async (newVal, oldVal) => {
@@ -286,149 +261,30 @@ export const VueSurf = defineComponent({
       { deep: true },
     );
 
-    const smoothRatio = computed<number>(() => {
-      if (typeof props.smooth === "number") {
-        return props.smooth > 1 ? 1 : props.smooth < 0 ? 0 : props.smooth;
-      } else if (props.smooth === true) {
-        return 1;
-      } else {
-        return 0;
-      }
-    });
-
-    function getHeightPercent(h: number) {
-      const height = props.side === "bottom" ? h : waveHeight.value - h;
-      return getLengthPercentNumber(height, waveHeight.value);
-    }
-
-    function getDistancePercent(d: number) {
-      return getLengthPercentNumber(d, waveLength.value * repeatTimes.value);
-    }
-
-    const wavePath = computed<string>(() => {
-      if (!repeatTimes.value) return "";
-      const origin = props.side === "bottom" ? "-0.1" : "100.1";
-      const apexes: number[][] = Array.from({ length: repeatTimes.value })
+    const repeatedApexesPixelSet = computed<number[][]>(() => {
+      return Array.from({ length: repeatTimes.value })
         .map((_, i) => {
-          if (i === 0) return apexesPixelNumberArray.value;
+          if (i === 0) return apexesPixelSet.value;
           return props.repeat
-            ? apexesPixelNumberArray.value
-            : apexesPixelNumberArray.value.map(([d]) => {
+            ? apexesPixelSet.value
+            : apexesPixelSet.value.map(([d]) => {
                 return [d, 0];
               });
         })
         .flat();
-      let sumDistance = 0;
-      let path = "";
+    });
 
-      path += apexes.reduce((acc, [d, h], index, arr) => {
-        const halfBetweenPrev = average(d, 0);
-        const apexSvgXPercent = getDistancePercent(sumDistance + d);
-        const apexSvgYPercent = getHeightPercent(h);
-
-        if (index === 0) {
-          return (acc += `${apexSvgYPercent}`);
-        } else {
-          const prevApexSvgXPercent = getDistancePercent(sumDistance);
-          const prevApexSvgYPercent = getHeightPercent(arr[index - 1][1]);
-
-          let smoothness = 0;
-          if (index !== arr.length - 1 && index !== 1) {
-            const halfBetweenNext = average(arr[index + 1][0], 0);
-
-            const prev = halfBetweenPrev;
-            const next = halfBetweenNext;
-            if (prev < next) {
-              const ratio = (prev + next) / next;
-              smoothness = props.smooth ? ratio * prev * smoothRatio.value : 0;
-            }
-          }
-
-          const middleBetweenPrevSvgX = sumDistance + halfBetweenPrev;
-
-          let firstControlPointX: number;
-          let firstControlPointY: number;
-          let secondControlPointX: number;
-          let secondControlPointY: number;
-
-          switch (currentShape.value) {
-            case "wavy":
-              firstControlPointX = getDistancePercent(
-                middleBetweenPrevSvgX + smoothness,
-              );
-              break;
-            case "serrated":
-              firstControlPointX = prevApexSvgXPercent;
-              break;
-
-            case "petal":
-              firstControlPointX =
-                h < arr[index - 1][1] ? apexSvgXPercent : prevApexSvgXPercent;
-              break;
-            default:
-              firstControlPointX = getDistancePercent(
-                middleBetweenPrevSvgX + smoothness,
-              );
-          }
-
-          switch (currentShape.value) {
-            case "wavy":
-              firstControlPointY = prevApexSvgYPercent;
-              break;
-            case "serrated":
-              firstControlPointY = prevApexSvgYPercent;
-              break;
-            case "petal":
-              firstControlPointY =
-                h < arr[index - 1][1] ? prevApexSvgYPercent : apexSvgYPercent;
-              break;
-            default:
-              firstControlPointY = prevApexSvgYPercent;
-          }
-
-          switch (currentShape.value) {
-            case "wavy":
-              secondControlPointX = getDistancePercent(
-                middleBetweenPrevSvgX - smoothness,
-              );
-              break;
-            case "serrated":
-              secondControlPointX = apexSvgXPercent;
-              break;
-            case "petal":
-              secondControlPointX = apexSvgXPercent;
-              break;
-            default:
-              secondControlPointX = getDistancePercent(
-                middleBetweenPrevSvgX - smoothness,
-              );
-          }
-
-          switch (currentShape.value) {
-            case "wavy":
-              secondControlPointY = apexSvgYPercent;
-              break;
-            case "serrated":
-              secondControlPointY = apexSvgYPercent;
-              break;
-            case "petal":
-              secondControlPointY = apexSvgYPercent;
-              break;
-            default:
-              secondControlPointY = apexSvgYPercent;
-          }
-
-          const firstControlPoint = `${firstControlPointX} ${firstControlPointY}`;
-          const secondControlPoint = `${secondControlPointX} ${secondControlPointY}`;
-          const end = `${apexSvgXPercent} ${apexSvgYPercent}`;
-
-          sumDistance += d;
-
-          return (acc += ` C${firstControlPoint}, ${secondControlPoint}, ${end}`);
-        }
-      }, "");
-
-      return `M-10 ${origin} L-10 0 L0 ${path} L110 0 L110 ${origin}Z`;
+    const wavePath = computed<string>(() => {
+      if (!repeatTimes.value) return "";
+      return plotter({
+        apexesPixelSet: repeatedApexesPixelSet.value,
+        waveLength: waveLength.value,
+        waveHeight: waveHeight.value,
+        repeatTimes: repeatTimes.value,
+        side: props.side,
+        shape: currentShape.value,
+        smooth: props.smooth,
+      });
     });
 
     const alignItems = computed<string>(() => {
@@ -436,10 +292,12 @@ export const VueSurf = defineComponent({
     });
     const transition = computed<string>(() => {
       if (!props.transitionDuration) return "";
-      const widthTransition = isTransition.value
-        ? `width ${props.transitionDuration}ms linear, margin-left ${props.transitionDuration}ms linear, `
-        : "";
-      return `${widthTransition} height ${props.transitionDuration}ms linear, margin-top ${props.transitionDuration}ms linear ,margin-bottom ${props.transitionDuration}ms linear`;
+      const timing = `${props.transitionDuration}ms linear`;
+      const basicTransition = `height ${timing}, margin-top ${timing}, margin-bottom ${timing}`;
+      return (
+        (isTransition.value ? `width ${timing}, margin-left ${timing}, ` : "") +
+        basicTransition
+      );
     });
 
     const containerStyle = computed<StyleValue>(() => {
@@ -498,17 +356,16 @@ export const VueSurf = defineComponent({
     });
 
     const pathColor = computed<LinearGradientColor>(() => {
-      if (typeof currentColor.value === "string") {
-        return {
-          name: `vue-surf-${currentColor.value}`,
-          steps: [
-            { offset: 0, color: currentColor.value, opacity: 1 },
-            { offset: 1, color: currentColor.value, opacity: 1 },
-          ],
-        };
-      }
-      return currentColor.value;
+      if (typeof currentColor.value === "object") return currentColor.value;
+      return {
+        name: `vue-surf-${currentColor.value}`,
+        steps: [
+          { offset: 0, color: currentColor.value, opacity: 1 },
+          { offset: 1, color: currentColor.value, opacity: 1 },
+        ],
+      };
     });
+
     const pathStyle = computed(() => {
       return {
         fill: `url(#${pathColor.value.name})`,
