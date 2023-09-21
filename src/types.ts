@@ -1,13 +1,3 @@
-export type ApexParametersObject = {
-  distance: number | string;
-  height: number | string;
-};
-export type ApexParametersTuple = [
-  ApexParametersObject["distance"],
-  ApexParametersObject["height"],
-];
-export type ApexParameters = ApexParametersObject | ApexParametersTuple;
-
 export type LinearGradientColor = {
   name: string;
   rotate?: number;
@@ -18,24 +8,35 @@ export type LinearGradientColor = {
   }[];
 };
 
+export type WaveSide = "top" | "bottom";
 export type WaveShape = "wavy" | "serrated" | "petal";
 
-export type WaveSide = "top" | "bottom";
+export type Apex =
+  | [number | string, number | string]
+  | {
+      distance: number | string;
+      height: number | string;
+    };
+
+export type Apexes =
+  | Apex[]
+  | {
+      apexes: Apex[];
+      shape?: WaveShape;
+      color?: string | LinearGradientColor;
+    };
 
 export type ApexesChangedCallback = (
-  currentApexes: ApexParameters[],
+  currentApexes: Apex[],
   currentShape: WaveShape,
+  currentColor: string | LinearGradientColor,
 ) => void;
 
 export type WaveProps = {
   width?: number | string;
   shape?: WaveShape;
   side?: WaveSide;
-  apexes?: ApexParameters[];
-  apexesSeries?: (
-    | ApexParameters[]
-    | { apexes: ApexParameters[]; shape?: WaveShape }
-  )[];
+  apexesSeries: Apexes[];
   color?: string | LinearGradientColor;
   repeat?: boolean;
   closure?: boolean;

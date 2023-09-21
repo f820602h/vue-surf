@@ -1,7 +1,8 @@
 import {
   WaveProps,
   WaveExpose,
-  ApexParameters,
+  Apex,
+  Apexes,
   WaveShape,
   WaveSide,
   LinearGradientColor,
@@ -45,23 +46,10 @@ export const VueSurf = defineComponent({
       default: "wavy",
       validator: shapeValidator,
     },
-    apexes: {
-      type: Array as () => ApexParameters[],
-      default: undefined,
-      validator: apexesValidator,
-    },
     apexesSeries: {
-      type: Array as () => (
-        | ApexParameters[]
-        | { apexes: ApexParameters[]; shape?: WaveShape }
-      )[],
-      default: undefined,
-      validator: (
-        val: (
-          | ApexParameters[]
-          | { apexes: ApexParameters[]; shape?: WaveShape }
-        )[],
-      ) => {
+      type: Array as () => Apexes[],
+      required: true,
+      validator: (val: Apexes[]) => {
         if (!val) return true;
         if (!Array.isArray(val) || (Array.isArray(val) && val.length === 0)) {
           throw new Error(errorText.apexesSeriesFormat);
@@ -161,23 +149,30 @@ export const VueSurf = defineComponent({
       if (!props.apexesSeries) return 0;
       return counter.value % props.apexesSeries.length;
     });
-    const currentShape = computed<WaveShape>(() => {
-      if (props.apexesSeries && props.apexesSeries.length > 0) {
-        const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
-        if ("shape" in apexesSeries) {
-          return apexesSeries.shape || props.shape || "wavy";
-        }
-      }
-      return props.shape || "wavy";
-    });
-    const currentApexes = computed<ApexParameters[]>(() => {
+    const currentApexes = computed<Apex[]>(() => {
       if (props.apexesSeries && props.apexesSeries.length > 0) {
         const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
         if (Array.isArray(apexesSeries)) return apexesSeries;
         else if ("apexes" in apexesSeries) return apexesSeries.apexes;
-        throw new Error(errorText.apexesSeriesFormat);
-      } else if (props.apexes) return props.apexes;
-      throw new Error(errorText.apexesNotProvide);
+      }
+      throw new Error(errorText.apexesSeriesFormat);
+    });
+    const currentShape = computed<WaveShape>(() => {
+      if (props.apexesSeries && props.apexesSeries.length > 0) {
+        const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
+        if ("shape" in apexesSeries)
+          return apexesSeries.shape || props.shape || "wavy";
+      }
+      return props.shape || "wavy";
+    });
+    const currentColor = computed<string | LinearGradientColor>(() => {
+      if (props.apexesSeries && props.apexesSeries.length > 0) {
+        const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
+        if ("color" in apexesSeries) {
+          return apexesSeries.color || props.color || "white";
+        }
+      }
+      return props.color || "white";
     });
 
     watch(
@@ -186,7 +181,7 @@ export const VueSurf = defineComponent({
         if (val && val.length > 1) resumeApexesSeriesTransform();
         else pauseApexesSeriesTransform();
       },
-      { immediate: true },
+      { immediate: true, deep: true },
     );
     watch(
       () => currentApexes.value,
@@ -194,8 +189,13 @@ export const VueSurf = defineComponent({
         if (oldVal && newVal.length !== oldVal.length) {
           console.warn(errorText.apexesLengthChanged);
         }
-        props.onApexesChanged?.([...newVal], currentShape.value);
+        props.onApexesChanged?.(
+          [...newVal],
+          currentShape.value,
+          currentColor.value,
+        );
       },
+      { deep: true },
     );
 
     const isTransition = ref<boolean>(true);
@@ -230,7 +230,7 @@ export const VueSurf = defineComponent({
       }
     });
 
-    const closureApexes = computed<ApexParameters[]>(() => {
+    const closureApexes = computed<Apex[]>(() => {
       if (!props.closure) return currentApexes.value;
       const resultApexes = [...currentApexes.value];
       const firstApex = resultApexes[0];
@@ -333,16 +333,16 @@ export const VueSurf = defineComponent({
 
           const middleBetweenPrevSvgX = sumDistance + halfBetweenPrev;
 
-          let firstControlPointX;
-          let firstControlPointY;
-          let secondControlPointX;
-          let secondControlPointY;
+          let firstControlPointX: number;
+          let firstControlPointY: number;
+          let secondControlPointX: number;
+          let secondControlPointY: number;
 
           if (isHidden) {
             firstControlPointX = prevApexSvgXPercent;
-            firstControlPointY = 0;
+            firstControlPointY = Number(origin);
             secondControlPointX = prevApexSvgXPercent;
-            secondControlPointY = 0;
+            secondControlPointY = Number(origin);
           } else {
             switch (currentShape.value) {
               case "wavy":
@@ -425,10 +425,6 @@ export const VueSurf = defineComponent({
       return `M0 ${origin} L0 ${path} L101 0 L101 ${origin}Z`;
     });
 
-    const pathColor = computed<string>(() => {
-      if (typeof props.color === "string") return props.color;
-      return `url(#gradient-${props.color.name})`;
-    });
     const alignItems = computed<string>(() => {
       return props.side === "bottom" ? "flex-start" : "flex-end";
     });
@@ -479,9 +475,37 @@ export const VueSurf = defineComponent({
       };
     });
 
+    const linearGradientStyle = computed(() => {
+      return {
+        transition: !props.transitionDuration
+          ? ""
+          : `${props.transitionDuration}ms linear`,
+      };
+    });
+
+    const stopStyle = computed(() => {
+      return {
+        transition: !props.transitionDuration
+          ? ""
+          : `${props.transitionDuration}ms linear`,
+      };
+    });
+
+    const pathColor = computed<LinearGradientColor>(() => {
+      if (typeof currentColor.value === "string") {
+        return {
+          name: `vue-surf-${currentColor.value}`,
+          steps: [
+            { offset: 0, color: currentColor.value, opacity: 1 },
+            { offset: 1, color: currentColor.value, opacity: 1 },
+          ],
+        };
+      }
+      return currentColor.value;
+    });
     const pathStyle = computed(() => {
       return {
-        fill: pathColor.value,
+        fill: `url(#${pathColor.value.name})`,
         transition: !props.transitionDuration
           ? ""
           : `${props.transitionDuration}ms linear`,
@@ -503,8 +527,10 @@ export const VueSurf = defineComponent({
       containerStyle,
       repeatWrapperStyle,
       svgStyle,
+      linearGradientStyle,
+      stopStyle,
       pathStyle,
-      colorProp: props.color,
+      pathColor,
       ...exposedProps,
     };
   },
@@ -516,8 +542,10 @@ export const VueSurf = defineComponent({
       containerStyle,
       repeatWrapperStyle,
       svgStyle,
+      linearGradientStyle,
+      stopStyle,
       pathStyle,
-      colorProp,
+      pathColor,
     } = this;
 
     return h(
@@ -540,26 +568,28 @@ export const VueSurf = defineComponent({
                       style: svgStyle,
                     },
                     [
-                      typeof colorProp !== "string" &&
-                        i === 0 &&
+                      i === 0 &&
                         h("defs", [
                           h(
                             "linearGradient",
                             {
-                              id: `gradient-${colorProp.name}`,
+                              id: pathColor.name,
                               gradientTransform: `rotate(${
-                                colorProp.rotate || 0
+                                pathColor.rotate || 0
                               }, .5, .5)`,
+                              style: linearGradientStyle,
                             },
                             [
-                              colorProp.steps.length > 0 &&
-                                Array.from(colorProp.steps).map(
+                              pathColor.steps.length > 0 &&
+                                Array.from(pathColor.steps).map(
                                   ({ offset, color, opacity }) => {
                                     return h("stop", {
                                       offset,
                                       style: {
                                         stopColor: color,
-                                        stopOpacity: opacity,
+                                        stopOpacity:
+                                          opacity === undefined ? 1 : opacity,
+                                        ...stopStyle,
                                       },
                                     });
                                   },

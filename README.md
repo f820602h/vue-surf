@@ -124,18 +124,18 @@ In addition to the regular wave pattern, VueSurf also offer options for a serrat
 
 ### apexes
 ```typescript
-export type ApexParametersObject = {
+export type Apex = {
   distance: number | string;
   height: number | string;
 };
 export type ApexParametersTuple = [
-  ApexParametersObject["distance"],
-  ApexParametersObject["height"],
+  Apex["distance"],
+  Apex["height"],
 ];
-export type ApexParameters = ApexParametersObject | ApexParametersTuple;
+export type Apex = Apex | ApexParametersTuple;
 
 apexes: {
-  type: Array as () => ApexParameters[],
+  type: Array as () => Apex[],
   default: undefined,
 }
 ```
@@ -156,39 +156,122 @@ const apexes = ref([
 ])
 ```
 
-<strong>Here are several points that warrant your attention:</strong>
-> 1. Due to the absence of a preceding apex for the first apex, any distance configuration for it will be disregarded.<br/><br/>
-> 2. It is noteworthy that when configured using percentages, they will be calculated relative to the width of the wave. <br/>
-
 <br/>
 
 ### apexesSeries
 ```typescript
+export type Apex =
+  | [number | string, number | string]
+  | {
+      distance: number | string;
+      height: number | string;
+    };
+
+export type Apexes =
+  | Apex[]
+  | {
+      apexes: Apex[];
+      shape?: WaveShape;
+      color?: string | LinearGradientColor;
+    };
+
 apexesSeries: {
-  type: Array as () => (
-    | ApexParameters[]
-    | { apexes: ApexParameters[]; shape?: WaveShape }
-  )[],
+  type: Array as () => Apexes[],
   default: undefined,
 }
 ```
-An array comprised of multiple `apexes`, when the length of the array exceeds one, shall automatically initiate a transformation animation across these `apexes`.
+#### What is Apex?
 
-Additionally, if you wish to specify the `shape` of a particular set of `apexes` within `apexesSeries`, you can achieve this transformation by passing an object containing `apexes` and `shape`.
+An apex is configured as the smallest unit of a wave, consisting of both `height` and `distance`. You can represent it using either an object or an array.
 
+```typescript
+const apex = ref<Apex>([0, "50%"]);
+// or 
+const apex = ref<Apex>({ distance: 0, height: "50%" });
+```
+
+Here, the term `distance` refers to the length of separation from the **previous apex**. And `height` denotes the vertical distance of the apex from the reference plane used for calculation.
+
+Both `distance` and `height` accept direct `number` values representing pixels or `string` with `px` or `%` units.
+
+<img src="./graphs/apex.png" alt="apex" width="100%">
+
+> It is noteworthy that when configured using percentages, they will be calculated relative to the width of the wave. <br/>
+
+#### What is Apexes?
+
+Apexes are an array composed of multiple `apex`, and you can freely use either object or array formats for each apex within the array.
+
+```typescript
+const apexes = ref<Apexes>([
+  { distance: 0, height: "50%" },
+  [100, 50],
+  ["100px", 120]
+]);
+```
+
+Additionally, if you wish to set apexes with shapes or colors distinct from the `shape` and `color` props, you can describe apexes using objects and specify the 'shape' and 'color' properties.
+
+```typescript
+const myApexes = ref<Apexes>({
+  apexes: [
+    { distance: 0, height: "20%" },
+    [100, 50],
+    ["100px", 120]
+  ],
+  shape: "petal"
+  color: "lightblue"
+});
+```
+
+> Due to the absence of a preceding apex for the first apex, any distance configuration for it will be disregarded.
+
+#### Setting ApexesSeries
+
+ApexesSeries is an array composed of one or multiple `apexes`. Similarly, you have the option to utilize either object or array formats for apexes within it."
 
 ```typescript
 const apexesSeries = ref([
-  [[0, 50], [100, 0], [100, 50]],
+  [
+    { distance: 0, height: "20%" },
+    [120, 60],
+    [120, ""]
+  ],
   {
-    apexes: [[0, 0], [100, 50], [100, 0]],
-    shape: "wavy"
+    apexes: [
+      { distance: 0, height: "10%" },
+      [100, 50],
+      ["100px", 80]
+    ],
+    shape: "petal"
+    color: "lightblue"
   }
 ])
 ```
+
+When you pass an ApexesSeries with a length greater than 1, the wave transformation animation will automatically activate.
+
 <p align="center">
 <img src="./graphs/apexes-series.gif" alt="apexes-series" width="60%">
 </p>
+
+Of course, you can also directly replace the values of ApexesSeries dynamically to achieve the transformation effect.
+
+```typescript
+const apexesSeries = ref([
+  [
+    [0, 50],
+    [100, 0],
+    [100, 50]
+  ],
+])
+
+apexesSeries.value = [
+  [0, 100],
+  [50, 0],
+  [50, 100]
+]
+```
 
 > Please ensure that each `apexes` within the `apexesSeries` possesses an equal length to maintain the effectiveness of the transformation animation."
 
@@ -371,7 +454,7 @@ To achieve a seamless animation effect, when no value is specified, it defaults 
 ### onApexesChanged
 ```typescript
 type ApexesChangedCallback = (
-  currentApexes: ApexParameters[],
+  currentApexes: Apex[],
   currentShape: WaveShape,
 ) => void;
 

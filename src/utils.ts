@@ -1,9 +1,4 @@
-import {
-  ApexParameters,
-  WaveShape,
-  WaveSide,
-  LinearGradientColor,
-} from "./types";
+import { Apex, WaveShape, WaveSide, LinearGradientColor } from "./types";
 
 const pixelRegex = /(\d+)px/;
 const percentRegex = /(\d+)%/;
@@ -22,7 +17,6 @@ export const errorText = {
   apexesLengthZero:
     "[Vue Surf] at least one apex length must be greater than 0",
   apexesSeriesFormat: "[Vue Surf] apexesSeries must be a not empty array",
-  apexesNotProvide: "[Vue Surf] please provide apexes or apexesSeries",
   apexesLengthChanged:
     "[Vue Surf] Apexes length changed, animation may be broken",
   colorFormat: "[Vue Surf] color must be a string or object",
@@ -49,7 +43,7 @@ export function lengthValidator(val: number | string): boolean {
   return true;
 }
 
-export function apexesValidator(val: ApexParameters[]): boolean {
+export function apexesValidator(val: Apex[]): boolean {
   if (!val) return true;
   if (!Array.isArray(val) || (Array.isArray(val) && val.length === 0)) {
     throw new Error(errorText.apexesFormat);

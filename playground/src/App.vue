@@ -112,10 +112,12 @@ import { VueSurf } from "../../src/components/VueSurf";
     />
     <VueSurf
       width="100%"
-      :apexes="[
-        [0, 50],
-        ['40%', 0],
-        ['60%', 100],
+      :apexes-series="[
+        [
+          [0, 50],
+          ['40%', 0],
+          ['60%', 100],
+        ],
       ]"
       :color="{
         name: 'linear-gradient-2',
