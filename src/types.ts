@@ -37,6 +37,7 @@ export type WaveProps = {
   shape?: WaveShape;
   side?: WaveSide;
   apexesSeries: Apexes[];
+  apexesIndex?: number;
   color?: string | LinearGradientColor;
   repeat?: boolean;
   closure?: boolean;
@@ -44,13 +45,7 @@ export type WaveProps = {
   marquee?: boolean;
   marqueeSpeed?: number;
   transitionDuration?: number;
+  apexesSeriesTransformAuto?: boolean;
   apexesSeriesTransformDuration?: number;
   onApexesChanged?: ApexesChangedCallback;
-};
-
-export type WaveExpose = {
-  resumeMarquee: () => void;
-  pauseMarquee: () => void;
-  resumeApexesSeriesTransform: () => void;
-  pauseApexesSeriesTransform: () => void;
 };

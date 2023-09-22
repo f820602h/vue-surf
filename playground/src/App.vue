@@ -9,7 +9,7 @@ import { VueSurf } from "../../src/components/VueSurf";
       :apexes-series="[
         [
           [0, 50],
-          [50, 50],
+          [50, 0],
           [50, 50],
         ],
         {
@@ -18,11 +18,12 @@ import { VueSurf } from "../../src/components/VueSurf";
             [50, 0],
             [50, 50],
           ],
+          color: '#419197',
           shape: 'serrated',
         },
         [
           [0, 50],
-          [50, 50],
+          [50, 0],
           [50, 50],
         ],
         {
@@ -31,6 +32,7 @@ import { VueSurf } from "../../src/components/VueSurf";
             [50, 0],
             [50, 50],
           ],
+          color: '#12486B',
           shape: 'petal',
         },
       ]"

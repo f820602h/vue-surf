@@ -1,6 +1,5 @@
 import {
   WaveProps,
-  WaveExpose,
   Apex,
   Apexes,
   WaveShape,
@@ -8,7 +7,6 @@ import {
   LinearGradientColor,
   ApexesChangedCallback,
 } from "../types";
-
 import type { DefineComponent, PropType, StyleValue } from "vue";
 import {
   ref,
@@ -57,6 +55,10 @@ export const VueSurf = defineComponent({
       required: true,
       validator: apexesSeriesValidator,
     },
+    apexesIndex: {
+      type: Number,
+      default: undefined,
+    },
     side: {
       type: String as () => WaveSide,
       default: "top",
@@ -86,6 +88,10 @@ export const VueSurf = defineComponent({
       type: Number,
       default: 500,
     },
+    apexesSeriesTransformAuto: {
+      type: Boolean,
+      default: true,
+    },
     apexesSeriesTransformDuration: {
       type: Number,
       default: undefined,
@@ -100,13 +106,11 @@ export const VueSurf = defineComponent({
     const { width: waveElWidth } = useElementSize(waveEl);
 
     const {
-      startMarquee,
-      stopMarquee,
-      resumeMarquee,
-      pauseMarquee,
-      resetMarqueeSpeed,
+      start: startMarquee,
+      stop: stopMarquee,
+      resetSpeed,
     } = useMarquee(waveEl, props.marqueeSpeed);
-    watch(() => props.marqueeSpeed, resetMarqueeSpeed);
+    watch(() => props.marqueeSpeed, resetSpeed);
     watch(
       () => waveElWidth.value && props.marquee,
       (val) => {
@@ -122,12 +126,15 @@ export const VueSurf = defineComponent({
       resume: resumeApexesSeriesTransform,
     } = useTransformation();
     watch(
-      () => props.apexesSeries,
+      () =>
+        props.apexesSeriesTransformAuto &&
+        props.apexesSeries.length > 1 &&
+        (props.apexesIndex === undefined || props.apexesIndex === null),
       (val) => {
-        if (val && val.length > 1) resumeApexesSeriesTransform();
+        if (val) resumeApexesSeriesTransform();
         else pauseApexesSeriesTransform();
       },
-      { immediate: true, deep: true },
+      { immediate: true },
     );
 
     const isTransition = ref<boolean>(true);
@@ -187,11 +194,15 @@ export const VueSurf = defineComponent({
         return [1, 1];
       });
     }
-    function gerWaveLength(apexes: Apex[]): number {
+    function getWaveLength(apexes: Apex[]): number {
       return getApexesPixelNumberArray(apexes).reduce((acc, [d]) => acc + d, 0);
     }
-    function gerWaveHeight(apexes: Apex[]): number {
+    function getWaveHeight(apexes: Apex[]): number {
       return Math.max(...getApexesPixelNumberArray(apexes).map(([, h]) => h));
+    }
+    function getRepeatTimes(apexes: Apex[]): number {
+      if (!waveElWidth.value) return 0;
+      return Math.ceil(waveElWidth.value / getWaveLength(apexes));
     }
 
     const counter = computed<number>(() => {
@@ -200,32 +211,27 @@ export const VueSurf = defineComponent({
       return Math.floor(timestamp.value / duration);
     });
     const apexesSeriesIndex = computed<number>(() => {
-      if (!props.apexesSeries) return 0;
-      return counter.value % props.apexesSeries.length;
+      return props.apexesIndex !== undefined
+        ? props.apexesIndex
+        : counter.value % props.apexesSeries.length;
     });
 
     const currentApexes = computed<Apex[]>(() => {
-      if (props.apexesSeries && props.apexesSeries.length > 0) {
-        const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
-        if (Array.isArray(apexesSeries)) return apexesSeries;
-        else if ("apexes" in apexesSeries) return apexesSeries.apexes;
-      }
+      const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
+      if (Array.isArray(apexesSeries)) return apexesSeries;
+      else if ("apexes" in apexesSeries) return apexesSeries.apexes;
       throw new Error(errorText.apexesSeriesFormat);
     });
     const currentShape = computed<WaveShape>(() => {
-      if (props.apexesSeries && props.apexesSeries.length > 0) {
-        const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
-        if ("shape" in apexesSeries)
-          return apexesSeries.shape || props.shape || "wavy";
-      }
+      const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
+      if ("shape" in apexesSeries)
+        return apexesSeries.shape || props.shape || "wavy";
       return props.shape || "wavy";
     });
     const currentColor = computed<string | LinearGradientColor>(() => {
-      if (props.apexesSeries && props.apexesSeries.length > 0) {
-        const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
-        if ("color" in apexesSeries) {
-          return apexesSeries.color || props.color || "white";
-        }
+      const apexesSeries = props.apexesSeries[apexesSeriesIndex.value];
+      if ("color" in apexesSeries) {
+        return apexesSeries.color || props.color || "white";
       }
       return props.color || "white";
     });
@@ -234,24 +240,25 @@ export const VueSurf = defineComponent({
       return getApexesPixelNumberArray(currentApexes.value);
     });
     const waveLength = computed<number>(() => {
-      return gerWaveLength(currentApexes.value);
+      return getWaveLength(currentApexes.value);
     });
     const waveHeight = computed<number>(() => {
-      return gerWaveHeight(currentApexes.value);
+      return getWaveHeight(currentApexes.value);
     });
     const repeatTimes = computed<number>(() => {
-      if (!waveElWidth.value) return 0;
-      return Math.ceil(waveElWidth.value / waveLength.value);
+      return getRepeatTimes(currentApexes.value);
     });
 
     watch(
       () => currentApexes.value,
       async (newVal, oldVal) => {
+        if (JSON.stringify(newVal) === JSON.stringify(oldVal)) return;
         if (oldVal && newVal.length !== oldVal.length) {
           console.warn(errorText.apexesLengthChanged);
-        } else if (waveLength.value !== gerWaveLength(newVal)) {
+        } else if (getRepeatTimes(oldVal) !== getRepeatTimes(newVal)) {
           console.warn(errorText.apexesTotalDistanceChanged);
         }
+
         props.onApexesChanged?.(
           [...newVal],
           currentShape.value,
@@ -278,9 +285,8 @@ export const VueSurf = defineComponent({
       if (!repeatTimes.value) return "";
       return plotter({
         apexesPixelSet: repeatedApexesPixelSet.value,
-        waveLength: waveLength.value,
+        totalDistance: waveLength.value * repeatTimes.value * 5,
         waveHeight: waveHeight.value,
-        repeatTimes: repeatTimes.value,
         side: props.side,
         shape: currentShape.value,
         smooth: props.smooth,
@@ -333,7 +339,7 @@ export const VueSurf = defineComponent({
     const svgStyle = computed(() => {
       return {
         flexShrink: 0,
-        width: `${waveLength.value * repeatTimes.value}px`,
+        width: `${waveLength.value * repeatTimes.value * 5}px`,
         height: `${waveHeight.value}px`,
         transition: transition.value,
       };
@@ -375,18 +381,10 @@ export const VueSurf = defineComponent({
       };
     });
 
-    const exposedProps: WaveExpose = {
-      resumeMarquee,
-      pauseMarquee,
-      resumeApexesSeriesTransform,
-      pauseApexesSeriesTransform,
-    };
-
     return {
       waveEl,
       waveElWidth,
       repeatTimes,
-      wavePath,
       containerStyle,
       repeatWrapperStyle,
       svgStyle,
@@ -394,14 +392,13 @@ export const VueSurf = defineComponent({
       stopStyle,
       pathStyle,
       pathColor,
-      ...exposedProps,
+      wavePath,
     };
   },
   render() {
     const {
       waveElWidth,
       repeatTimes,
-      wavePath,
       containerStyle,
       repeatWrapperStyle,
       svgStyle,
@@ -409,6 +406,7 @@ export const VueSurf = defineComponent({
       stopStyle,
       pathStyle,
       pathColor,
+      wavePath,
     } = this;
 
     return h(
@@ -421,48 +419,55 @@ export const VueSurf = defineComponent({
             { class: "vue-wave__repeat-wrapper", style: repeatWrapperStyle },
             [
               repeatTimes > 0 &&
-                Array.from({ length: 5 }).map((_, i) =>
-                  h(
-                    "svg",
-                    {
-                      xmlns: "http://www.w3.org/2000/svg",
-                      viewBox: "0,0,100,100",
-                      preserveAspectRatio: "none",
-                      style: svgStyle,
-                    },
-                    [
-                      i === 0 &&
-                        h("defs", [
-                          h(
-                            "linearGradient",
-                            {
-                              id: pathColor.name,
-                              gradientTransform: `rotate(${
-                                pathColor.rotate || 0
-                              }, .5, .5)`,
-                              style: linearGradientStyle,
-                            },
-                            [
-                              pathColor.steps.length > 0 &&
-                                Array.from(pathColor.steps).map(
-                                  ({ offset, color, opacity }) => {
-                                    return h("stop", {
-                                      offset,
-                                      style: {
-                                        stopColor: color,
-                                        stopOpacity:
-                                          opacity === undefined ? 1 : opacity,
-                                        ...stopStyle,
-                                      },
-                                    });
+                h(
+                  "svg",
+                  {
+                    xmlns: "http://www.w3.org/2000/svg",
+                    viewBox: "0,0,100,100",
+                    preserveAspectRatio: "none",
+                    style: svgStyle,
+                  },
+                  [
+                    h("defs", [
+                      h(
+                        "linearGradient",
+                        {
+                          id: pathColor.name,
+                          gradientTransform: `rotate(${
+                            pathColor.rotate || 0
+                          }, .5, .5)`,
+                          style: linearGradientStyle,
+                        },
+                        [
+                          pathColor.steps.length > 0 &&
+                            Array.from(pathColor.steps).map(
+                              ({ offset, color, opacity }) => {
+                                return h("stop", {
+                                  offset,
+                                  style: {
+                                    stopColor: color,
+                                    stopOpacity:
+                                      opacity === undefined ? 1 : opacity,
+                                    ...stopStyle,
                                   },
-                                ),
-                            ],
-                          ),
-                        ]),
-                      wavePath && h("path", { d: wavePath, style: pathStyle }),
-                    ],
-                  ),
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                    ]),
+                    wavePath &&
+                      Array.from({ length: 5 }).map((_, i) =>
+                        h("path", {
+                          d: wavePath,
+                          "vector-effect": "non-scaling-stroke",
+                          style: {
+                            ...pathStyle,
+                            transform: `translateX(${20 * i}%)`,
+                          },
+                        }),
+                      ),
+                  ],
                 ),
             ],
           ),

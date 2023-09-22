@@ -3,33 +3,31 @@ import { getLengthPercentNumber, average } from "./utils";
 
 export function plotter({
   apexesPixelSet,
-  waveLength,
+  totalDistance,
   waveHeight,
-  repeatTimes,
   side,
   shape,
   smooth,
 }: {
   apexesPixelSet: number[][];
-  waveLength: number;
+  totalDistance: number;
   waveHeight: number;
-  repeatTimes: number;
   side: WaveSide;
   shape: WaveShape;
   smooth: boolean | number;
 }): string {
-  const origin = side === "bottom" ? "-0.1" : "100.1";
-  let path = "";
-  let sumDistance = 0;
-
   function getHeightPercent(h: number) {
     const height = side === "bottom" ? h : waveHeight - h;
     return getLengthPercentNumber(height, waveHeight);
   }
 
   function getDistancePercent(d: number) {
-    return getLengthPercentNumber(d, waveLength * repeatTimes);
+    return getLengthPercentNumber(d, totalDistance);
   }
+
+  const origin = side === "bottom" ? "-0.1" : "100.1";
+  let path = "";
+  let sumDistance = 0;
 
   path += apexesPixelSet.reduce((acc, [d, h], index, arr) => {
     const halfBetweenPrev = average(d, 0);
@@ -114,5 +112,7 @@ export function plotter({
     return (acc += ` C${firstControlPoint}, ${secondControlPoint}, ${end}`);
   }, "");
 
-  return `M-10 ${origin} L-10 0 L0 ${path} L110 0 L110 ${origin}Z`;
+  return `M0 ${origin} L0 ${path} L${getDistancePercent(
+    sumDistance,
+  )} ${origin}Z`;
 }

@@ -190,7 +190,7 @@ const myApexes = ref<Apexes>({
     [100, 50],
     ["100px", 120]
   ],
-  shape: "petal"
+  shape: "petal",
   color: "lightblue"
 });
 ```
@@ -205,22 +205,22 @@ ApexesSeries is an array composed of one or multiple `apexes`. Similarly, you ha
 const apexesSeries = ref<Apexes[]>([
   [
     { distance: 0, height: "20%" },
-    [120, 60],
-    [120, ""]
+    [120, 0],
+    [120, 120]
   ],
   {
     apexes: [
       { distance: 0, height: "10%" },
-      [100, 50],
-      ["100px", 80]
+      [120, 0],
+      [120, 60]
     ],
-    shape: "petal"
+    shape: "petal",
     color: "lightblue"
   }
 ])
 ```
 
-When you pass an ApexesSeries with a length greater than 1, the wave transformation animation will automatically activate.
+When you pass an ApexesSeries with a length greater than 1, the wave transformation animation will automatically activate. However, you can disable it by setting `apexesSeriesTransformAuto` to `false`.
 
 <p align="center">
 <img src="./graphs/apexes-series.gif" alt="apexes-series" width="60%">
@@ -245,6 +245,18 @@ apexesSeries.value = [
 ```
 
 > ⚠️ Please ensure that each `apexes` within the `apexesSeries` possesses an equal **length** and **total distance** to maintain the effectiveness of the transformation animation."
+
+<br/>
+
+### apexesIndex
+```typescript
+apexesIndex: {
+  type: Number,
+  default: undefined,
+}
+```
+You can specify `apexesIndex` to determine which set of `apexes` from `apexesSeries` the wave should display.When it is configured, the transformation animation will be deactivated.
+
 
 <br/>
 
@@ -381,7 +393,9 @@ marquee: {
   default: true,
 }
 ```
-When you use <VueSurf>, the marquee animation effect will automatically activate. You can set it to `false` to deactivate the animation.
+When you use <VueSurf>, the marquee animation effect will automatically activate. You can set it to `false` to deactivate the animation. 
+
+Switch it from `true` to `false`, the animation will completely reset. If you only wish to pause the marquee, please set `marqueeSpeed` to zero.
 
 <p align="center">
 <img src="./graphs/marquee.gif" alt="marquee" width="60%">
@@ -398,6 +412,7 @@ marqueeSpeed: {
 ```
 It accepts a `number` value ranging from -25 to 25 to control the speed of the marquee animation. When the value is greater than 0, the animation moves to the right; when less than 0, it moves to the left.
 
+
 <br/>
 
 ### transitionDuration
@@ -407,7 +422,20 @@ transitionDuration: {
   default: 500,
 }
 ```
-When you dynamically update the `apexes` or use the `apexesSeries`, the wave undergoes a transformation animation. You can pass a `number` value to adjust the transition duration. The unit is millisecond.
+
+Regardless of how you modify the current state of the wave ( ApexesSeriesTransform, Changing ApexesIndex or Changing Apex Value Directly... ), there will always be interpolation animations. You can pass a `number` value to adjust the transition duration. The unit is millisecond.
+
+<br/>
+
+### apexesSeriesTransformAuto
+```typescript
+apexesSeriesTransformAuto: {
+  type: Boolean,
+  default: true,
+}
+```
+When you pass an ApexesSeries with a length greater than 1, VueSurf will transform the wave in accordance with the order of the ApexesSeries. You can set `apexesSeriesTransformAuto` to `false` to disable it.
+
 
 <br/>
 
@@ -418,6 +446,10 @@ apexesSeriesTransformDuration: {
   default: undefined,
 }
 ```
+This parameter only becomes meaningful when `apexesSeriesTransformAuto` is set to true.
+
+It determines how long it takes to replace the current wave with the next set of Apexes. The unit is millisecond.
+
 To achieve a seamless animation effect, when no value is specified, it defaults to being the same as `transitionDuration`. However, if `transitionDuration` is set to 0, `apexesSeriesTransformDuration` will automatically be set to 500.
 
 <br/>
@@ -435,52 +467,6 @@ onApexesChanged: {
 }
 ```
 A callback function that is invoked when there is an update to the apexes.
-
-<br>
-
-## Exposed Methods
-
-```html
-<script setup lang="ts">
-import { VueSurf, type WaveExpose } from "vue-surf";
-
-const vueSurf = ref<WaveExpose>(null)
-</script>
-
-<template>
-  <VueSurf
-    ref="vueSurf"
-    :width="800"
-    :apexes="[[0, 50], [100, 0], [100, 50]]"
-  />
-  <section
-    @mouseenter="vueSurfRef?.pauseMarquee()"
-    @mouseleave="vueSurfRef?.playMarquee()"
-  />
-</template>
-```
-
-```typescript
-type WaveExpose = {
-  pauseMarquee: () => void;
-  resumeMarquee: () => void;
-  pauseApexesSeriesTransform: () => void;
-  resumeApexesSeriesTransform: () => void;
-};
-```
-
-### pauseMarquee
-Gradually pause the marquee animation. This function becomes ineffective when `marquee` is set to `false`.
-
-### resumeMarquee
-Gradually resume the marquee animation. This function becomes ineffective when `marquee` is set to `false`.
-
-### pauseApexesSeriesTransform
-Pause the apexes transformation animation.
-
-### resumeApexesSeriesTransform
-Resume the apexes transformation animation.
-
 
 <br>
 

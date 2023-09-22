@@ -11,30 +11,39 @@ const percentRegex = /(\d+)%/;
 
 export const errorText = {
   parentNoWidth:
-    "[Vue Surf] parent element must have a width when using '%' to set width.",
-  lengthPositive: "[Vue Surf] please provide a positive length value.",
+    "[Vue Surf] Parent element must have a width when using '%' to set width.",
+  lengthPositive: "[Vue Surf] Please provide a positive length value.",
   lengthFormat:
-    "[Vue Surf] length must be a positive number or string with unit 'px' or '%'.",
+    "[Vue Surf] Length must be a positive number or string with unit 'px' or '%'.",
+
   apexFormat:
-    "[Vue Surf] apex must be an array of [number | string, number | string] or { distance: number, height: number }.",
-  apexesFormat: "[Vue Surf] 'apexes' need at least two apexes.",
+    "[Vue Surf] Apex must be an array of [number | string, number | string] or { distance: number, height: number }.",
+
+  apexesFormat: "[Vue Surf] Apexes need at least two apexes.",
   apexesHeightZero:
-    "[Vue Surf] at least one apex height must be greater than 0.",
+    "[Vue Surf] At least one apex height must be greater than 0.",
   apexesLengthZero:
-    "[Vue Surf] at least one apex length must be greater than 0.",
-  apexesSeriesFormat: "[Vue Surf] apexesSeries must be a not empty array.",
+    "[Vue Surf] At least one apex length must be greater than 0.",
+
+  apexesSeriesFormat: "[Vue Surf] ApexesSeries must be a not empty array.",
   apexesLengthChanged:
-    "[Vue Surf] Apexes length changed, animation may be broken.",
+    "[Vue Surf] The length of apexes changed, animation may be broken.",
+
+  apexesSeriesLengthOnlyOne:
+    "[Vue Surf] The length of 'apexesSeries' must be greater than 1 to initiate the transformation animation",
+
   apexesTotalDistanceChanged:
     "[Vue Surf] Apexes total distance changed, animation may be broken.",
-  colorFormat: "[Vue Surf] color must be a string or object.",
-  colorNameFormat: "[Vue Surf] color.name must be a string.",
-  colorRotateFormat: "[Vue Surf] color.rotate must be a number.",
-  ColorStepsFormat:
-    "[Vue Surf] color.steps must be a not empty array of { offset: number, color: string, opacity?: number }.",
-  colorStepOpacityFormat: "[Vue Surf] colorStep.opacity must be a number.",
-  shape: "[Vue Surf] shape must be one of 'wavy', 'serrated', 'petal'.",
-  side: "[Vue Surf] side must be one of 'top', 'bottom'.",
+
+  colorFormat: "[Vue Surf] Color must be a string or object.",
+  colorNameFormat: "[Vue Surf] Name in color must be a string.",
+  colorRotateFormat: "[Vue Surf] Rotate in color must be a number.",
+  colorStepOpacityFormat: "[Vue Surf] Opacity in step must be a number.",
+  colorStepsFormat:
+    "[Vue Surf] Steps in color must be a not empty array of { offset: number, color: string, opacity?: number }.",
+
+  shape: "[Vue Surf] Shape must be one of 'wavy', 'serrated', 'petal'.",
+  side: "[Vue Surf] Side must be one of 'top', 'bottom'.",
 };
 
 export function lengthValidator(val: number | string): boolean {
@@ -134,7 +143,7 @@ export function colorValidator(val: string | LinearGradientColor): boolean {
       !Array.isArray(val.steps) ||
       (Array.isArray(val.steps) && val.steps.length === 0)
     ) {
-      throw new Error(errorText.colorStepOpacityFormat);
+      throw new Error(errorText.colorStepsFormat);
     }
 
     return val.steps.every((colorStep) => {
@@ -142,7 +151,7 @@ export function colorValidator(val: string | LinearGradientColor): boolean {
         throw new Error(errorText.colorStepOpacityFormat);
       }
       if (!("offset" in colorStep) || !("color" in colorStep)) {
-        throw new Error(errorText.colorStepOpacityFormat);
+        throw new Error(errorText.colorStepsFormat);
       }
       return (
         typeof colorStep.offset === "number" &&
@@ -200,3 +209,16 @@ export function debounce(func: () => void) {
     timer = window.setTimeout(func, 300);
   };
 }
+
+// function findLCM(a: number, b: number): number {
+//   function findGCD(x: number, y: number): number {
+//     return y === 0 ? x : findGCD(y, x % y);
+//   }
+//   return (a * b) / findGCD(a, b);
+// }
+
+// export function findArrayLCM(arr: number[]): number {
+//   let lcm = arr[0];
+//   for (let i = 1; i < arr.length; i++) lcm = findLCM(lcm, arr[i]);
+//   return lcm;
+// }

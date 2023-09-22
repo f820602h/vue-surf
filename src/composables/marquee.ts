@@ -36,15 +36,16 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
     }
   }
 
-  function startMarquee(): void {
+  function start(): void {
     window.clearInterval(resumeTimer.value);
     window.clearInterval(pauseTimer.value);
     isStop.value = false;
+    offset.value = 0;
     currentSpeed.value = initSpeed.value;
     reqFrame.value = requestAnimationFrame(draw);
   }
 
-  function stopMarquee(): void {
+  function stop(): void {
     window.clearInterval(resumeTimer.value);
     window.clearInterval(pauseTimer.value);
     window.cancelAnimationFrame(reqFrame.value);
@@ -53,58 +54,14 @@ export function useMarquee(elementRef: Ref<HTMLElement | null>, speed: number) {
     reqFrame.value = 0;
   }
 
-  function resetMarqueeSpeed(speed: number) {
+  function resetSpeed(speed: number) {
     initSpeed.value = standardize(speed);
     currentSpeed.value = standardize(speed);
   }
 
-  function resumeMarquee(): void {
-    if (isStop.value) return;
-    if (!initSpeed.value) return;
-    if (Math.abs(currentSpeed.value) >= Math.abs(initSpeed.value)) return;
-    if (resumeTimer.value) window.clearInterval(resumeTimer.value);
-    if (pauseTimer.value) window.clearInterval(pauseTimer.value);
-
-    const stepSpeed = initSpeed.value < 0 ? -0.1 : 0.1;
-
-    resumeTimer.value = window.setInterval(() => {
-      if (Math.abs(currentSpeed.value) >= Math.abs(initSpeed.value)) {
-        currentSpeed.value = initSpeed.value;
-        window.clearInterval(resumeTimer.value);
-      } else currentSpeed.value = standardize(currentSpeed.value + stepSpeed);
-    }, 10);
-  }
-
-  function pauseMarquee(): void {
-    if (isStop.value) return;
-    if (!initSpeed.value) return;
-    if (
-      (initSpeed.value > 0 && currentSpeed.value <= 0) ||
-      (initSpeed.value < 0 && currentSpeed.value >= 0)
-    ) {
-      return;
-    }
-    if (resumeTimer.value) window.clearInterval(resumeTimer.value);
-    if (pauseTimer.value) window.clearInterval(pauseTimer.value);
-
-    const stepSpeed = initSpeed.value < 0 ? -0.1 : 0.1;
-
-    pauseTimer.value = window.setInterval(() => {
-      if (
-        (initSpeed.value > 0 && currentSpeed.value <= 0) ||
-        (initSpeed.value < 0 && currentSpeed.value >= 0)
-      ) {
-        currentSpeed.value = 0;
-        window.clearInterval(pauseTimer.value);
-      } else currentSpeed.value = standardize(currentSpeed.value - stepSpeed);
-    }, 10);
-  }
-
   return {
-    startMarquee,
-    resetMarqueeSpeed,
-    resumeMarquee,
-    pauseMarquee,
-    stopMarquee,
+    start,
+    resetSpeed,
+    stop,
   };
 }
