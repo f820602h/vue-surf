@@ -41,33 +41,30 @@ import { VueSurf } from "../../src/components/VueSurf";
       :transition-duration="1000"
     />
   </div>
-  <div>
-    <div class="links">
-      <a href="https://github.com/f820602h/vue-surf">
-        <img class="github" src="./assets/github.svg" alt="github" />
-        <p>Vue Surf</p>
-      </a>
+
+  <div class="title">
+    <div class="name">
+      <img class="github" src="./assets/github.svg" alt="github" />
+      <p>Vue Surf</p>
     </div>
     <h1>Let's go surfing together!</h1>
+    <pre>$ npm i vue-surf</pre>
+    <a href="https://github.com/f820602h/vue-surf"> → Home Page</a>
   </div>
+
   <div>
     <VueSurf
       width="100%"
       :apexes-series="[
         [
-          [0, 50],
-          ['45%', 150],
-          ['55%', 50],
-        ],
-        [
-          [0, 170],
-          ['50%', 80],
-          ['50%', 170],
-        ],
-        [
           [0, 90],
-          ['35%', 140],
-          ['65%', 90],
+          ['45%', 120],
+          ['55%', 80],
+        ],
+        [
+          [0, 70],
+          ['50%', 110],
+          ['50%', 100],
         ],
       ]"
       :color="{
@@ -79,25 +76,21 @@ import { VueSurf } from "../../src/components/VueSurf";
         ],
       }"
       :smooth="false"
-      :transition-duration="1500"
+      :marquee-speed="4"
+      :transition-duration="2000"
     />
     <VueSurf
       width="100%"
       :apexes-series="[
         [
-          [0, 75],
-          ['65%', 0],
-          ['35%', 120],
-        ],
-        [
-          [0, 0],
+          [0, 40],
           ['50%', 70],
-          ['50%', 10],
+          ['50%', 30],
         ],
         [
-          [0, 120],
-          ['25%', 0],
-          ['75%', 200],
+          [0, 85],
+          ['65%', 30],
+          ['35%', 60],
         ],
       ]"
       :color="{
@@ -109,8 +102,7 @@ import { VueSurf } from "../../src/components/VueSurf";
         ],
       }"
       :smooth="false"
-      :closure="false"
-      :marquee="false"
+      :marquee-speed="5"
       :transition-duration="1500"
     />
     <VueSurf
@@ -146,31 +138,51 @@ h1 {
   margin: 12px 0 0 0;
   line-height: 1;
 }
-.links {
+
+.title {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  margin: -50px auto 0 auto;
+  color: white;
+
+  .name {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: -50px auto 0 auto;
+
+    p {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0 0 0 8px;
+    }
+
+    img {
+      width: 30px;
+      height: 30px;
+    }
+  }
+
+  pre {
+    margin: 32px 0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: #444;
+  }
 
   a {
     display: flex;
     justify-content: center;
     align-items: center;
-    text-decoration: none;
-  }
-
-  p {
-    color: white;
-    font-size: 24px;
+    border-bottom: 1px white solid;
+    font-size: 16px;
+    font-style: italic;
     font-weight: bold;
-    margin: 0 0 0 8px;
-  }
-
-  img {
-    width: 30px;
-    height: 30px;
+    text-decoration: none;
+    color: white;
   }
 }
+
 section {
   width: 100%;
   height: 5vh;
