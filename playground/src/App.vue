@@ -57,14 +57,14 @@ import { VueSurf } from "../../src/components/VueSurf";
       width="100%"
       :apexes-series="[
         [
-          [0, 90],
-          ['45%', 120],
+          [0, 70],
+          ['45%', 100],
           ['55%', 80],
         ],
         [
-          [0, 70],
-          ['50%', 110],
-          ['50%', 100],
+          [0, 90],
+          ['50%', 50],
+          ['50%', 120],
         ],
       ]"
       :color="{
@@ -102,16 +102,16 @@ import { VueSurf } from "../../src/components/VueSurf";
         ],
       }"
       :smooth="false"
-      :marquee-speed="5"
+      :marquee-speed="4.5"
       :transition-duration="1500"
     />
     <VueSurf
       width="100%"
       :apexes-series="[
         [
-          [0, 50],
-          ['40%', 0],
-          ['60%', 100],
+          [0, 25],
+          ['35%', 0],
+          ['65%', 60],
         ],
       ]"
       :color="{
@@ -132,13 +132,6 @@ import { VueSurf } from "../../src/components/VueSurf";
 </template>
 
 <style scoped lang="scss">
-h1 {
-  text-align: center;
-  font-size: 45px;
-  margin: 12px 0 0 0;
-  line-height: 1;
-}
-
 .title {
   display: flex;
   flex-direction: column;
@@ -161,6 +154,13 @@ h1 {
       width: 30px;
       height: 30px;
     }
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 45px;
+    margin: 4px 0 0 0;
+    line-height: 1;
   }
 
   pre {
