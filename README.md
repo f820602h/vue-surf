@@ -52,7 +52,13 @@ import { VueSurf } from "vue-surf";
 <template>
   <VueSurf
     :width="800"
-    :apexesSeries="[[0, 50], [100, 0], [100, 50]]"
+    :apexes-series="[
+      [
+        [0, 50],
+        [100, 0],
+        [100, 50]
+      ]
+    ]"
   />
 </template>
 ```
