@@ -42,7 +42,7 @@ npm install vue-surf
 
 ## Usage
 
-Add `<VueSurf>` component from `vue-surf` to your template, and Pass in at least two parameters, `width` and `apexes` to `<VueSurf>`.
+Add `<VueSurf>` component from `vue-surf` to your template, and Pass in at least two parameters, `width` and `apexesSeries` to `<VueSurf>`.
 
 ```html
 <script setup>
@@ -52,7 +52,7 @@ import { VueSurf } from "vue-surf";
 <template>
   <VueSurf
     :width="800"
-    :apexes="[[0, 50], [100, 0], [100, 50]]"
+    :apexesSeries="[[0, 50], [100, 0], [100, 50]]"
   />
 </template>
 ```
@@ -277,7 +277,13 @@ The determination of whether the wave faces upwards or downwards also dictates w
   <VueSurf
     :width="800"
     :side="'top'"
-    :apexes="[[0, 50], [100, 0], [100, 50]]"
+    :apexes-series="[
+      [
+        [0, 50],
+        [100, 0],
+        [100, 50]
+      ]
+    ]"
   />
 </template>
 
@@ -285,7 +291,13 @@ The determination of whether the wave faces upwards or downwards also dictates w
   <VueSurf
     :width="800"
     :side="'bottom'"
-    :apexes="[[0, 50], [100, 0], [100, 50]]"
+    :apexes-series="[
+      [
+        [0, 50],
+        [100, 0],
+        [100, 50]
+      ]
+    ]"
   />
   <section />
 </template>
@@ -312,7 +324,13 @@ The decision to automatically repeat is contingent upon whether the cumulative `
   <section />
   <VueSurf
     :width="800"
-    :apexes="[[0, 50], [100, 0], [100, 50]]"
+    :apexes-series="[
+      [
+        [0, 50],
+        [100, 0],
+        [100, 50]
+      ]
+    ]"
     :repeat="false"
   />
 </template>
@@ -337,7 +355,13 @@ To facilitate a natural alignment of repeated waves, the height of the last apex
   <section />
   <VueSurf
     :width="800"
-    :apexes="[[0, 50], [100, 0], [100, 100]]" // higher then first apex
+    :apexes-series="[
+      [
+        [0, 50],
+        [100, 0],
+        [100, 100] // higher then first apex
+      ]
+    ]" 
     :closure="false"
   />
 </template>
@@ -366,12 +390,14 @@ Alternatively, you can provide a `number` value between 0 and 1 to adjust the le
   <section />
   <VueSurf
     :width="800"
-    :apexes="[ 
-      [0, 50],
-      [100, 0],
-      [50, 100],
-      [200, 0],
-      [100, 50]
+    :apexes-series="[
+      [ 
+        [0, 50],
+        [100, 0],
+        [50, 100],
+        [200, 0],
+        [100, 50]
+      ]
     ]"
     :smooth="false"
   />
